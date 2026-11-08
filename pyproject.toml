@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fde-servicing-agent"
-version = "0.4.0"
-description = "Milestone 4 evaluation-driven FDE Servicing Agent proof of concept"
+version = "0.4.1"
+description = "Evaluation-driven FDE Servicing Agent PoC with opt-in Snowflake history"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
@@ -24,6 +24,9 @@ dev = [
 semantic = [
     "sentence-transformers>=3.4,<6",
 ]
+snowflake = [
+    "snowflake-connector-python>=3.12,<6",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -37,4 +40,7 @@ servicing_agent = ["corpus/*.json"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "snowflake_integration: opt-in test against configured Snowflake history",
+]
 

@@ -35,6 +35,18 @@ class RetrievalDebug(BaseModel):
     embedding_cache_status: str | None = None
 
 
+class HistoryDebug(BaseModel):
+    backend: Literal["mock", "snowflake"]
+    status: Literal["available", "empty", "unavailable", "not_applicable"]
+    latency_ms: float
+    record_count: int
+    table_counts: dict[str, int] = Field(default_factory=dict)
+    retrieved_at: str | None = None
+    freshness_at: str | None = None
+    fallback_used: bool = False
+    failure_category: str | None = None
+
+
 OperationState = Literal["PENDING", "COMPLETED", "FAILED", "UNKNOWN"]
 HandoffState = Literal["CREATED", "ACCEPTED", "RESOLVED"]
 
@@ -156,5 +168,6 @@ class ChatResponse(BaseModel):
     warnings: list[str] = Field(default_factory=list)
     trace: list[str] = Field(default_factory=list)
     retrieval_debug: RetrievalDebug | None = None
+    history_debug: HistoryDebug | None = None
     sla: SLAStatusResponse | None = None
 

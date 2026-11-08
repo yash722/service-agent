@@ -20,6 +20,7 @@ class Settings:
     retrieval_rrf_k: int
     retrieval_semantic_min_score: float
     retrieval_semantic_min_top_score: float
+    history_backend: str
     sla_backup_after_minutes: int
 
     @classmethod
@@ -53,6 +54,7 @@ class Settings:
             retrieval_semantic_min_top_score=float(
                 os.getenv("RETRIEVAL_SEMANTIC_MIN_TOP_SCORE", "0.45")
             ),
+            history_backend=os.getenv("HISTORY_BACKEND", "mock").lower(),
             sla_backup_after_minutes=int(
                 os.getenv("SLA_BACKUP_AFTER_MINUTES", "15")
             ),

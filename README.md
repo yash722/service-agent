@@ -1,19 +1,27 @@
-# Salesforce FDE Servicing Agent PoC — Milestone 4
+# Salesforce FDE Servicing Agent PoC — Milestone 4 + Snowflake History
 
 A local, evaluation-driven proof of concept for evidence-grounded customer
 servicing and controlled, simulated CRM actions. Milestone 4 adds a measured
 evaluation dashboard, end-to-end golden scenarios, reproducible demo reset, and a
 polished technical-demo interface while preserving all prior capabilities.
+The Milestone 3.5 extension adds an opt-in, read-only Snowflake customer-history
+source to the existing investigation workflow.
 
 All customers, cases, entitlements, policies, product documents, notes, and call
-transcripts are synthetic. There are no Salesforce, Snowflake, or production
-credentials.
+transcripts are synthetic. The optional Snowflake connection reads synthetic
+history only. There is no real Salesforce integration, and no production
+credentials or private keys are stored in this repository.
 
 ## What works
 
 - FastAPI `GET /health` and `POST /chat` endpoints plus Streamlit chat UI
 - Deterministic ticket-status routing that does not invoke LangGraph or RAG
 - LangGraph orchestration for authorized complex investigations
+- `HISTORY_BACKEND=mock|snowflake`, defaulting to network-free `mock`
+- Read-only Snowflake history from `CUSTOMER_ACTIVITY`, `CASE_HISTORY`, and
+  `SUPPORT_INTERACTIONS` using RSA key-pair authentication
+- Parameterized case/customer filters, verified Snowflake session context,
+  query timeouts, safe cleanup, and explicit no-fallback failure reporting
 - `lexical`, `semantic`, and `hybrid` retrieval modes selected with
   `RETRIEVAL_MODE`
 - CPU Sentence Transformers using `sentence-transformers/all-MiniLM-L6-v2`
@@ -51,6 +59,7 @@ FastAPI ── deterministic intent router ── ticket-status fast path
    ├─ LangGraph read workflow
    │    ├─ authorized SQLite CRM + entitlement tools
    │    ├─ lexical / semantic / RRF hybrid retrieval
+   │    ├─ optional authorized Snowflake historical evidence
    │    └─ deterministic or optional citation-validated LLM generation
    │
    ├─ LangGraph controlled-action workflow
@@ -66,11 +75,17 @@ rules for high-risk decisions, evidence before generation, database-enforced
 idempotency, and evaluation artifacts that distinguish measured behavior from
 illustrative business narratives.
 
+SQLite CRM remains authoritative for current ticket status. Snowflake is queried
+only after the server resolves and authorizes the CRM case, and contributes
+historical evidence to complex investigations; it never overrides the status
+fast path.
+
 ## Retrieval flow
 
 ```text
 Complex request
   └─> authorized case and entitlement reads
+       ├─> authorized Snowflake history read (when configured)
        └─> record / tenant / policy applicability filtering
             ├─> lexical ranking
             ├─> semantic cosine ranking
@@ -122,6 +137,7 @@ Important files:
 │   ├── evaluation_dashboard.py
 │   ├── generation.py
 │   ├── handoffs.py
+│   ├── history.py
 │   ├── index_embeddings.py
 │   ├── retrieval.py
 │   ├── sla.py
@@ -164,6 +180,19 @@ python -m pip install -e ".[dev,semantic]"
 
 This configuration runs the embedding model on CPU and works without an NVIDIA
 GPU.
+
+### Snowflake-enabled setup
+
+Install the connector extra in the same virtual environment. Include `semantic`
+as shown when hybrid retrieval is also required:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev,semantic,snowflake]"
+```
+
+The connector is imported lazily, so the default mock backend does not require
+Snowflake packages, credentials, or network access.
 
 ## Initialize the local database
 
@@ -234,6 +263,47 @@ not a production calibration.
 If semantic initialization fails, `semantic` and `hybrid` requests use lexical
 retrieval and report the reason in `retrieval_debug.fallback_reason`.
 
+## Snowflake history configuration
+
+Mock mode is the safe default and performs no Snowflake connection:
+
+```powershell
+$env:HISTORY_BACKEND = "mock"
+```
+
+For the verified synthetic Snowflake environment, set every connection field in
+the same PowerShell window that starts Uvicorn. Do not place these values in
+source code, README files, shell history, or committed `.env` files.
+
+```powershell
+$env:HISTORY_BACKEND = "snowflake"
+$env:SNOWFLAKE_ACCOUNT = Read-Host "Snowflake account identifier"
+$env:SNOWFLAKE_USER = "SERVICING_AGENT_SVC"
+$env:SNOWFLAKE_ROLE = "SERVICING_HISTORY_READER"
+$env:SNOWFLAKE_WAREHOUSE = "SERVICING_POC_WH"
+$env:SNOWFLAKE_DATABASE = "SERVICING_AGENT_DEMO"
+$env:SNOWFLAKE_SCHEMA = "HISTORY"
+$env:SNOWFLAKE_PRIVATE_KEY_FILE = "$HOME\.snowflake\keys\servicing_agent_key.p8"
+$privateKeyPassphrase = Read-Host "Encrypted private-key passphrase" -AsSecureString
+$env:SNOWFLAKE_PRIVATE_KEY_PASSWORD = [System.Net.NetworkCredential]::new("", $privateKeyPassphrase).Password
+$env:SNOWFLAKE_LOGIN_TIMEOUT_SECONDS = "20"
+$env:SNOWFLAKE_NETWORK_TIMEOUT_SECONDS = "30"
+$env:SNOWFLAKE_QUERY_TIMEOUT_SECONDS = "20"
+$env:SNOWFLAKE_HISTORY_ROW_LIMIT = "25"
+```
+
+The adapter requests `SNOWFLAKE_JWT`, verifies that Snowflake actually selected
+the configured role, database, and schema, discovers only approved evidence
+columns, and issues only `SELECT` statements. `CASE_HISTORY` and
+`SUPPORT_INTERACTIONS` are filtered by both server-resolved customer and case;
+`CUSTOMER_ACTIVITY` is filtered by the authorized customer. Credentials and row
+contents are never written to application logs.
+
+If Snowflake authentication, authorization, or a query fails, the complex answer
+continues only with independently authorized CRM/RAG evidence and returns an
+explicit `history_debug.status = unavailable` warning. It does not silently use
+mock history.
+
 ## Run locally
 
 Terminal 1 — API:
@@ -241,6 +311,7 @@ Terminal 1 — API:
 ```powershell
 .\.venv\Scripts\Activate.ps1
 $env:RETRIEVAL_MODE = "hybrid"
+$env:HISTORY_BACKEND = "mock" # change to snowflake after configuring it above
 $env:SERVICE_AGENT_LLM_PROVIDER = "none"
 python -m uvicorn servicing_agent.api:app --reload --port 8000
 ```
@@ -258,7 +329,7 @@ Open <http://localhost:8501>. API documentation is at
 The UI has three focused areas:
 
 - **Customer servicing** — selectable reproducible scenarios, chat, citations,
-  and execution traces.
+  execution traces, and Snowflake history freshness/latency when enabled.
 - **Controlled actions** — simulated note confirmation, reconciliation, human
   escalation, and deterministic SLA status.
 - **Evaluation dashboard** — measured quality, latency, scenario outcomes, and
@@ -310,7 +381,8 @@ Then use the Streamlit scenario selector and controls:
    LLM, plus deterministic overdue-SLA status.
 3. **1:00–1:45 — Multi-source investigation.** Run **Multi-source investigation**.
    Expected in hybrid mode: case-note and call-transcript citations, source
-   snippets, retrieval rankings, and the execution trace.
+   snippets, retrieval rankings, and the execution trace. With Snowflake enabled,
+   the answer also shows `SF-*` history citations and history freshness.
 4. **1:45–2:30 — Customer applicability.** Run Premium and Standard policy
    scenarios. Expected: CASE-4821 uses Premium approved policy v2.0/two clock
    hours; CASE-4824 uses Standard approved policy v1.0/eight business hours.
@@ -343,6 +415,21 @@ Use Alex Morgan:
 
 Switch to Jordan Lee and repeat a `CASE-4821` question. The trace contains no
 retrieval rankings and the response contains no protected snippets or citations.
+The authorization denial occurs before any Snowflake connection is opened.
+
+### Snowflake history demonstration
+
+After setting the secure Snowflake variables and starting the API, submit:
+
+```text
+Using customer activity, case changes, and support interactions, summarize the history of CASE-4821.
+```
+
+Expected: the response remains a LangGraph `complex_request`; current status is
+still sourced from SQLite CRM; authorized history appears as `SF-*` citations;
+and the debug panel reports `backend=snowflake`, per-table counts, retrieval time,
+and the newest source timestamp. Switch to `demo-agent-jordan` and repeat the
+request: no Snowflake query or history citation is allowed.
 
 ### Controlled ticket note
 
@@ -416,10 +503,24 @@ Tests use mocked embeddings and do not download a model:
 python -m pytest
 ```
 
-The 56-test suite preserves every Milestone 1–3 regression and adds demo-reset,
+The test suite preserves every Milestone 1–4 regression and adds demo-reset,
 end-to-end evaluator, deterministic-versus-LLM labeling, dashboard parsing,
-scenario-catalog, and major Streamlit-path coverage. Semantic unit tests use
-mocked embeddings and do not download the model.
+scenario-catalog, major Streamlit-path coverage, mocked Snowflake connector
+queries, authorization boundaries, cleanup, and no-fallback handling. Semantic
+unit tests use mocked embeddings and do not download the model.
+
+The real Snowflake test is opt-in and runs the query through FastAPI and the
+LangGraph workflow. It never prompts interactively:
+
+```powershell
+# Set the Snowflake variables from the secure configuration section first.
+$env:RUN_SNOWFLAKE_INTEGRATION = "1"
+python -m pytest -m snowflake_integration tests\test_snowflake_connection.py -q
+Remove-Item Env:RUN_SNOWFLAKE_INTEGRATION
+```
+
+Without `RUN_SNOWFLAKE_INTEGRATION=1`, this one network test is reported as
+skipped while all mocked tests still run.
 
 ## Run the end-to-end evaluation
 
@@ -492,6 +593,16 @@ deflection, ROI, or other business outcome was measured or inferred.
   populated by `python -m servicing_agent.index_embeddings`.
 - **Missing LLM key:** expected behavior is the explicitly labeled deterministic
   fallback. Retrieval, actions, and SLA rules continue to work.
+- **Snowflake configuration error at startup:** confirm all eight required
+  `SNOWFLAKE_*` identity/key variables are set in the Uvicorn terminal and that
+  the key path is readable.
+- **Snowflake history is unavailable:** inspect `history_debug.failure_category`
+  (`authentication`, `authorization`, or `query`) and Snowflake query history for
+  the fixed query tag `fde_servicing_agent_history_read`. The application does
+  not log connector details, passphrases, private-key contents, or returned rows.
+- **Snowflake returns no history:** confirm the synthetic Snowflake customer and
+  case identifiers match the CRM `customer_id`/`ticket_id`. The adapter will not
+  weaken the filter or substitute another customer's history.
 - **A demo starts in an unexpected state:** stop the API, run `demo_reset`, then
   restart Uvicorn so long-lived service objects reopen canonical data.
 - **Port already in use:** choose different Uvicorn/Streamlit ports and set
@@ -499,14 +610,16 @@ deflection, ROI, or other business outcome was measured or inferred.
 
 ## Milestone 4 boundaries
 
-This remains a local demonstration: no real Salesforce/Snowflake integration,
-production authentication, financial transactions, refunds, cloud deployment,
-vector database, or reranker. CRM mutations and queue routing are SQLite-only
-simulations. Customer confirmation is a demo-user attestation, not a customer
-signature or production consent record. There is no continuously running
-scheduler; SLA sweeps must be invoked by a request or CLI. The corpus and
-evaluation set are small and synthetic, local database/embedding files are
-unencrypted, and optional LLM
+This remains a local demonstration: there is no real Salesforce integration,
+Snowflake write access, production authentication, financial transaction,
+refund, cloud deployment, vector database, or reranker. The Snowflake adapter is
+limited by application code and the `SERVICING_HISTORY_READER` role to synthetic
+read-only history; this is not a production security certification. CRM mutations
+and queue routing are SQLite-only simulations. Customer confirmation is a
+demo-user attestation, not a customer signature or production consent record.
+There is no continuously running scheduler; SLA sweeps must be invoked by a
+request or CLI. The corpus and evaluation set are small and synthetic, local
+database/embedding files are unencrypted, and optional LLM
 generation has not been production-evaluated for safety, latency, or cost.
 The dashboard reads a generated local JSON snapshot rather than a live production
 telemetry system. Timing is machine-specific and excludes cold model download.

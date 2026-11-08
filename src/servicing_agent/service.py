@@ -13,6 +13,12 @@ from .generation import (
     OpenAICompatibleGroundedGenerator,
 )
 from .intent_router import extract_ticket_id, route_intent
+from .history import (
+    HistoryAdapter,
+    MockHistoryAdapter,
+    SnowflakeHistoryAdapter,
+    SnowflakeHistoryConfig,
+)
 from .logging_config import log_event
 from .retrieval import HybridRetrievalService
 from .schemas import ChatResponse
@@ -22,6 +28,7 @@ from .tools import (
     CRMAuthorizationError,
     EntitlementTool,
     EvidenceRetrievalTool,
+    HistoryTool,
     MockCRMTool,
     TicketNotFoundError,
 )
@@ -52,6 +59,16 @@ def build_answer_generator(settings: Settings) -> GroundedAnswerGenerator:
     return DeterministicGroundedGenerator()
 
 
+def build_history_adapter(settings: Settings) -> HistoryAdapter:
+    if settings.history_backend == "mock":
+        return MockHistoryAdapter()
+    if settings.history_backend == "snowflake":
+        return SnowflakeHistoryAdapter(SnowflakeHistoryConfig.from_environment())
+    raise ValueError(
+        "HISTORY_BACKEND must be either 'mock' or 'snowflake'."
+    )
+
+
 class ChatService:
     def __init__(
         self,
@@ -61,6 +78,7 @@ class ChatService:
         as_of: date | None = None,
         answer_generator: GroundedAnswerGenerator | None = None,
         retriever: HybridRetrievalService | None = None,
+        history_adapter: HistoryAdapter | None = None,
         sla_service: SLAService | None = None,
     ):
         settings = settings or Settings.from_environment()
@@ -76,6 +94,9 @@ class ChatService:
             semantic_min_top_score=settings.retrieval_semantic_min_top_score,
         )
         self.evidence_tool = EvidenceRetrievalTool(self.retrieval_service, as_of)
+        self.history_tool = HistoryTool(
+            history_adapter or build_history_adapter(settings)
+        )
         self.sla_service = sla_service or SLAService(
             database,
             self.crm_tool,
@@ -86,6 +107,7 @@ class ChatService:
             self.crm_tool,
             self.entitlement_tool,
             self.evidence_tool,
+            self.history_tool,
             self.answer_generator,
         )
 
@@ -128,6 +150,7 @@ class ChatService:
                 warnings=result["warnings"],
                 trace=result["trace"],
                 retrieval_debug=result.get("retrieval_debug"),
+                history_debug=result.get("history_debug"),
             )
 
         log_event(
@@ -139,6 +162,12 @@ class ChatService:
             evidence_status=response.evidence_status,
             generation_mode=response.generation_mode,
             citation_count=len(response.citations),
+            history_backend=(
+                response.history_debug.backend if response.history_debug else None
+            ),
+            history_status=(
+                response.history_debug.status if response.history_debug else None
+            ),
         )
         return response
 

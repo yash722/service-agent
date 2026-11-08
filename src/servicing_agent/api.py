@@ -64,8 +64,10 @@ def create_app(
 
     app = FastAPI(
         title="FDE Servicing Agent",
-        version="0.4.0",
-        description="Local-only Milestone 4 evaluation-driven servicing proof of concept",
+        version="0.4.1",
+        description=(
+            "Milestone 4 servicing PoC with opt-in read-only Snowflake history"
+        ),
         lifespan=lifespan,
     )
 

@@ -13,3 +13,6 @@ data/*.db-*
 data/embedding_cache/
 evaluations/results/
 .vscode
+secrets.txt
+*.p8
+*.pem

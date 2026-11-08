@@ -2,19 +2,22 @@ from __future__ import annotations
 
 import logging
 import operator
+import time
 from typing import Annotated, Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from .auth import DemoUserContext
 from .generation import GroundedAnswerGenerator
+from .history import HistoryError, HistoryResult
 from .logging_config import log_event
 from .retrieval import RetrievalResult
-from .schemas import RetrievalDebug, SourceCitation
+from .schemas import HistoryDebug, RetrievalDebug, SourceCitation
 from .tools import (
     CRMAuthorizationError,
     EntitlementTool,
     EvidenceRetrievalTool,
+    HistoryTool,
     MockCRMTool,
     TicketNotFoundError,
 )
@@ -31,6 +34,7 @@ class WorkflowState(TypedDict, total=False):
     ticket: dict[str, Any] | None
     entitlements: list[dict[str, Any]]
     retrieval: RetrievalResult
+    history: HistoryResult
     error: str | None
     reply: str
     citations: list[SourceCitation]
@@ -38,6 +42,7 @@ class WorkflowState(TypedDict, total=False):
     evidence_status: str
     warnings: list[str]
     retrieval_debug: RetrievalDebug | None
+    history_debug: HistoryDebug | None
     steps: Annotated[list[str], operator.add]
     trace: Annotated[list[str], operator.add]
 
@@ -46,6 +51,7 @@ def build_complex_workflow(
     crm_tool: MockCRMTool,
     entitlement_tool: EntitlementTool,
     evidence_tool: EvidenceRetrievalTool,
+    history_tool: HistoryTool,
     answer_generator: GroundedAnswerGenerator,
 ):
     def triage(state: WorkflowState) -> dict[str, Any]:
@@ -99,6 +105,7 @@ def build_complex_workflow(
             return {
                 "entitlements": [],
                 "retrieval": RetrievalResult((), "insufficient", ()),
+                "history": HistoryResult.not_applicable(history_tool.backend),
                 "steps": ["mock_knowledge:search", "mock_policy:guidance"],
                 "trace": ["evidence.skipped:case_context_error"],
             }
@@ -122,10 +129,25 @@ def build_complex_workflow(
             return {
                 "entitlements": [],
                 "retrieval": RetrievalResult((), "insufficient", ()),
+                "history": HistoryResult.not_applicable(history_tool.backend),
                 "error": "unauthorized",
                 "steps": ["mock_knowledge:search", "mock_policy:guidance"],
                 "trace": ["evidence.authorization:denied"],
             }
+
+        history_started = time.perf_counter()
+        try:
+            history = (
+                history_tool.get_case_history(ticket, state["user_context"])
+                if ticket
+                else HistoryResult.not_applicable(history_tool.backend)
+            )
+        except HistoryError as exc:
+            history = HistoryResult.unavailable(
+                history_tool.backend,
+                getattr(exc, "category", "history_error"),
+                round((time.perf_counter() - history_started) * 1000, 3),
+            )
 
         source_ids = [item.document.source_id for item in retrieval.evidence]
         diagnostics = retrieval.diagnostics
@@ -143,9 +165,23 @@ def build_complex_workflow(
             selected_document_ids=diagnostics.selected_document_ids,
             fallback_reason=diagnostics.fallback_reason,
         )
+        log_event(
+            logger,
+            "workflow.history_retrieved",
+            execution_id=state["execution_id"],
+            backend=history.backend,
+            status=history.status,
+            record_count=len(history.records),
+            table_counts=dict(history.table_counts),
+            latency_ms=history.latency_ms,
+            freshness_at=history.freshness_at,
+            failure_category=history.failure_category,
+            fallback_used=history.fallback_used,
+        )
         return {
             "entitlements": entitlements,
             "retrieval": retrieval,
+            "history": history,
             # Retained as legacy step values for Milestone 1 API compatibility.
             "steps": ["mock_knowledge:search", "mock_policy:guidance"],
             "trace": [
@@ -159,6 +195,10 @@ def build_complex_workflow(
                     [f"retrieval.fallback:{diagnostics.fallback_reason}"]
                     if diagnostics.fallback_reason
                     else []
+                ),
+                (
+                    f"history.{history.backend}:{history.status}:"
+                    f"{len(history.records)}:{history.latency_ms:.3f}ms"
                 ),
             ],
         }
@@ -177,6 +217,7 @@ def build_complex_workflow(
                 "warnings": ["Protected evidence was not retrieved."],
                 "trace": ["generation.skipped:unauthorized"],
                 "retrieval_debug": None,
+                "history_debug": None,
             }
         elif state.get("error") == "not_found":
             result = {
@@ -187,6 +228,7 @@ def build_complex_workflow(
                 "warnings": ["No authoritative case record was found."],
                 "trace": ["generation.skipped:case_not_found"],
                 "retrieval_debug": None,
+                "history_debug": None,
             }
         else:
             generated = answer_generator.generate(
@@ -194,13 +236,24 @@ def build_complex_workflow(
                 ticket=state.get("ticket"),
                 entitlements=state.get("entitlements", []),
                 retrieval=state["retrieval"],
+                history=state["history"],
             )
             diagnostics = state["retrieval"].diagnostics
+            history = state["history"]
+            combined_evidence_status = (
+                "conflicting"
+                if state["retrieval"].status == "conflicting"
+                else (
+                    "sufficient"
+                    if state["retrieval"].evidence or history.records
+                    else "insufficient"
+                )
+            )
             result = {
                 "reply": generated.reply,
                 "citations": list(generated.citations),
                 "generation_mode": generated.mode,
-                "evidence_status": state["retrieval"].status,
+                "evidence_status": combined_evidence_status,
                 "warnings": list(generated.warnings),
                 "trace": [f"generation.{generated.mode}:citation_validated"],
                 "retrieval_debug": RetrievalDebug(
@@ -216,6 +269,17 @@ def build_complex_workflow(
                     ),
                     fallback_reason=diagnostics.fallback_reason,
                     embedding_cache_status=diagnostics.embedding_cache_status,
+                ),
+                "history_debug": HistoryDebug(
+                    backend=history.backend,
+                    status=history.status,
+                    latency_ms=history.latency_ms,
+                    record_count=len(history.records),
+                    table_counts=dict(history.table_counts),
+                    retrieved_at=history.retrieved_at,
+                    freshness_at=history.freshness_at,
+                    fallback_used=history.fallback_used,
+                    failure_category=history.failure_category,
                 ),
             }
         return {**result, "steps": ["workflow:compose_response"]}

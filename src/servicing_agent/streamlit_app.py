@@ -105,6 +105,7 @@ def assistant_message(result: dict) -> dict:
             "evidence_status": result.get("evidence_status", "not_applicable"),
             "trace": result.get("trace", result["steps"]),
             "retrieval": result.get("retrieval_debug"),
+            "history": result.get("history_debug"),
             "sla": result.get("sla"),
         },
     }

@@ -5,6 +5,7 @@ from typing import Any
 
 from .auth import DemoUserContext
 from .database import Database
+from .history import HistoryAdapter, HistoryResult
 from .retrieval import HybridRetrievalService, RetrievalResult
 
 
@@ -88,4 +89,29 @@ class EvidenceRetrievalTool:
             case_id=case_id,
             entitlements=entitlements,
         )
+
+
+class HistoryTool:
+    """Authorization boundary around the configured history adapter."""
+
+    def __init__(self, adapter: HistoryAdapter):
+        self.adapter = adapter
+
+    @property
+    def backend(self) -> str:
+        return self.adapter.backend
+
+    def get_case_history(
+        self,
+        ticket: dict[str, Any],
+        user_context: DemoUserContext,
+    ) -> HistoryResult:
+        customer_id = ticket.get("customer_id")
+        if not isinstance(customer_id, str) or not user_context.can_access_customer(
+            customer_id
+        ):
+            raise CRMAuthorizationError(
+                "Untrusted or unauthorized history context rejected"
+            )
+        return self.adapter.fetch_case_history(ticket, user_context)
 
