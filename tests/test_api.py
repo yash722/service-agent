@@ -32,7 +32,7 @@ def test_health(app: FastAPI) -> None:
     assert response.json() == {
         "status": "ok",
         "service": "fde-servicing-agent",
-        "milestone": 1,
+        "milestone": 2,
     }
 
 
@@ -54,6 +54,8 @@ def test_authorized_ticket_status_chat(app: FastAPI) -> None:
         "mock_crm:get_ticket",
     ]
     assert body["execution_id"]
+    assert body["citations"] == []
+    assert body["evidence_status"] == "not_applicable"
 
 
 def test_prompt_cannot_override_demo_user_authorization(app: FastAPI) -> None:

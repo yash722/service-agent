@@ -1,4 +1,4 @@
-"""Local Milestone 1 servicing-agent proof of concept."""
+"""Local evidence-grounded servicing-agent proof of concept."""
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 

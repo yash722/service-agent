@@ -6,6 +6,10 @@ __pycache__/
 .coverage
 htmlcov/
 .streamlit/
+.env
+.env.*
 data/*.db
 data/*.db-*
-
+data/embedding_cache/
+evaluations/results/
+.vscode

@@ -1,0 +1,51 @@
+{
+  "benchmark_date": "2026-11-07",
+  "environment": {
+    "platform": "Linux CPU validation environment",
+    "python": "3.12.3",
+    "sentence_transformers": "5.7.0",
+    "torch": "2.15.0+cpu",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "document_count": 10,
+    "golden_question_count": 10,
+    "retrieval_question_count": 6,
+    "runs_per_question": 5,
+    "warm_embedding_cache": true,
+    "rrf_k": 60,
+    "semantic_min_score": 0.25,
+    "semantic_min_top_score": 0.45
+  },
+  "metric_notes": {
+    "precision_at_3": "Uses a denominator of 3; each evaluated question has one relevant document, so the maximum aggregate value is 0.3333.",
+    "latency": "Measures retrieval after model and document-index initialization; it excludes one-time model download and model loading."
+  },
+  "modes": {
+    "lexical": {
+      "recall_at_5": 0.8333,
+      "precision_at_3": 0.2778,
+      "evidence_sufficiency_accuracy": 0.9,
+      "grounded_answer_accuracy": 0.9,
+      "retrieval_latency_p50_ms": 0.087,
+      "retrieval_latency_p95_ms": 0.11,
+      "fallback_count": 0
+    },
+    "semantic": {
+      "recall_at_5": 1.0,
+      "precision_at_3": 0.3333,
+      "evidence_sufficiency_accuracy": 1.0,
+      "grounded_answer_accuracy": 1.0,
+      "retrieval_latency_p50_ms": 13.625,
+      "retrieval_latency_p95_ms": 15.231,
+      "fallback_count": 0
+    },
+    "hybrid": {
+      "recall_at_5": 1.0,
+      "precision_at_3": 0.3333,
+      "evidence_sufficiency_accuracy": 1.0,
+      "grounded_answer_accuracy": 1.0,
+      "retrieval_latency_p50_ms": 14.142,
+      "retrieval_latency_p95_ms": 25.119,
+      "fallback_count": 0
+    }
+  }
+}

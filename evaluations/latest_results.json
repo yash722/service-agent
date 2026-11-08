@@ -1,0 +1,1019 @@
+{
+  "schema_version": 2,
+  "generated_at_utc": "2026-11-08T06:18:35.994490Z",
+  "dataset": "evaluations/golden_questions.json",
+  "scenario_count": 18,
+  "runs_per_scenario": 5,
+  "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "rrf_k": 60,
+  "generation_evaluation": {
+    "requested": "deterministic",
+    "declared_effective": "deterministic",
+    "credentials_present": false,
+    "note": "LLM output is measured only when generation_mode is llm. Deterministic fallback results are never labeled as LLM results."
+  },
+  "business_outcomes": {
+    "measured": [],
+    "not_measured": [
+      "CSAT",
+      "CPRR",
+      "production ROI",
+      "case deflection"
+    ],
+    "note": "Business scenarios in the demo are illustrative, not measured outcomes."
+  },
+  "metric_definitions": {
+    "task_success_rate": "Fraction of scenario runs satisfying all declared expected outcomes.",
+    "grounded_answer_accuracy": "Verifiable expected text and source citations for chat scenarios.",
+    "action_safety_rate": "Controlled mutations obey confirmation, idempotency, staleness, and authorization expectations.",
+    "latency": "Warm in-process timing; excludes model download and dashboard rendering."
+  },
+  "modes": {
+    "lexical": {
+      "scenario_count": 18,
+      "scenario_run_count": 90,
+      "passed_scenario_runs": 80,
+      "failed_scenario_runs": 10,
+      "task_success_rate": 0.8889,
+      "recall_at_5": 0.7143,
+      "precision_at_3": 0.2381,
+      "evidence_sufficiency_accuracy": 0.8182,
+      "grounded_answer_accuracy": 0.8182,
+      "policy_applicability_accuracy": 1,
+      "authorization_safety_rate": 1,
+      "action_safety_rate": 1,
+      "escalation_correctness": 1,
+      "recovery_success_rate": 1,
+      "retrieval_latency_p50_ms": 0.093,
+      "retrieval_latency_p95_ms": 0.207,
+      "tool_execution_latency_p50_ms": 4.321,
+      "tool_execution_latency_p95_ms": 10.757,
+      "end_to_end_latency_p50_ms": 6.236,
+      "end_to_end_latency_p95_ms": 23.606,
+      "retrieval_observation_count": 40,
+      "tool_observation_count": 125,
+      "end_to_end_observation_count": 90,
+      "effective_modes": {
+        "lexical": 40
+      },
+      "generation_modes": {
+        "not_applicable": 40,
+        "deterministic": 50
+      },
+      "fallback_count": 0,
+      "failure_categories": {
+        "paraphrased": 5,
+        "ticket_investigation": 5
+      },
+      "index_status": null,
+      "index_error": null,
+      "examples": [
+        {
+          "id": "ticket-status-fast-path",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 8.139
+        },
+        {
+          "id": "premium-escalation-evidence",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0"
+          ],
+          "returned_source_ids": [
+            "CASE-NOTE-4821"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 4.805
+        },
+        {
+          "id": "premium-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.458
+        },
+        {
+          "id": "standard-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "POL-TELEMETRY-RESPONSE-v1.0"
+          ],
+          "returned_source_ids": [
+            "ENT-1002-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 4.539
+        },
+        {
+          "id": "insufficient-evidence",
+          "scenario_type": "chat",
+          "category": "insufficient_evidence",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.948
+        },
+        {
+          "id": "unauthorized-case",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 5.269
+        },
+        {
+          "id": "telemetry-diagnostics-exact",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "KB-TELEMETRY-DELAY-v2.1",
+            "CALL-4821-20261105-v1.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "KB-TELEMETRY-DELAY"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 11.205
+        },
+        {
+          "id": "escalation-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0"
+          ],
+          "returned_source_ids": [
+            "CASE-NOTE-4821"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 4.534
+        },
+        {
+          "id": "call-transcript-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": false,
+          "failure_reason": "paraphrased",
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": false,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.858
+        },
+        {
+          "id": "unauthorized-paraphrase",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.378
+        },
+        {
+          "id": "multi-source-case-investigation",
+          "scenario_type": "chat",
+          "category": "ticket_investigation",
+          "success": false,
+          "failure_reason": "ticket_investigation",
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": false,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 4.069
+        },
+        {
+          "id": "note-confirmation-idempotency",
+          "scenario_type": "controlled_note",
+          "category": "crm_action",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 15.469
+        },
+        {
+          "id": "note-confirmation-required",
+          "scenario_type": "controlled_note",
+          "category": "action_safety",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 11.771
+        },
+        {
+          "id": "note-stale-confirmation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 22.98
+        },
+        {
+          "id": "note-timeout-reconciliation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 27.058
+        },
+        {
+          "id": "unauthorized-note-action",
+          "scenario_type": "controlled_note",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 2.763
+        },
+        {
+          "id": "human-handoff-lifecycle",
+          "scenario_type": "handoff",
+          "category": "human_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [
+            "[KB-TELEMETRY-DELAY v2.1]",
+            "[POL-TELEMETRY-RESPONSE v2.0]",
+            "[CALL-4821-20261105 v1.0]",
+            "[CASE-NOTE-4821 v1.0]"
+          ],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 17.46
+        },
+        {
+          "id": "mandatory-sla-backup-routing",
+          "scenario_type": "sla",
+          "category": "sla_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 11.33
+        }
+      ]
+    },
+    "semantic": {
+      "scenario_count": 18,
+      "scenario_run_count": 90,
+      "passed_scenario_runs": 90,
+      "failed_scenario_runs": 0,
+      "task_success_rate": 1,
+      "recall_at_5": 1.0,
+      "precision_at_3": 0.381,
+      "evidence_sufficiency_accuracy": 1,
+      "grounded_answer_accuracy": 1,
+      "policy_applicability_accuracy": 1,
+      "authorization_safety_rate": 1,
+      "action_safety_rate": 1,
+      "escalation_correctness": 1,
+      "recovery_success_rate": 1,
+      "retrieval_latency_p50_ms": 15.0,
+      "retrieval_latency_p95_ms": 24.646,
+      "tool_execution_latency_p50_ms": 8.753,
+      "tool_execution_latency_p95_ms": 22.125,
+      "end_to_end_latency_p50_ms": 17.945,
+      "end_to_end_latency_p95_ms": 33.805,
+      "retrieval_observation_count": 40,
+      "tool_observation_count": 125,
+      "end_to_end_observation_count": 90,
+      "effective_modes": {
+        "semantic": 40
+      },
+      "generation_modes": {
+        "not_applicable": 40,
+        "deterministic": 50
+      },
+      "fallback_count": 0,
+      "failure_categories": {},
+      "index_status": "disk",
+      "index_error": null,
+      "examples": [
+        {
+          "id": "ticket-status-fast-path",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 6.608
+        },
+        {
+          "id": "premium-escalation-evidence",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.337
+        },
+        {
+          "id": "premium-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 17.727
+        },
+        {
+          "id": "standard-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4824-v1.0",
+            "POL-TELEMETRY-RESPONSE-v1.0"
+          ],
+          "returned_source_ids": [
+            "CASE-NOTE-4824",
+            "ENT-1002-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 17.855
+        },
+        {
+          "id": "insufficient-evidence",
+          "scenario_type": "chat",
+          "category": "insufficient_evidence",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 21.147
+        },
+        {
+          "id": "unauthorized-case",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.301
+        },
+        {
+          "id": "telemetry-diagnostics-exact",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CALL-4821-20261105-v1.0",
+            "KB-TELEMETRY-DELAY-v2.1",
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "KB-TELEMETRY-DELAY"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 27.046
+        },
+        {
+          "id": "escalation-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "CALL-4821-20261105-v1.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.862
+        },
+        {
+          "id": "call-transcript-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CALL-4821-20261105-v1.0",
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 17.423
+        },
+        {
+          "id": "unauthorized-paraphrase",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 2.878
+        },
+        {
+          "id": "multi-source-case-investigation",
+          "scenario_type": "chat",
+          "category": "ticket_investigation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 20.804
+        },
+        {
+          "id": "note-confirmation-idempotency",
+          "scenario_type": "controlled_note",
+          "category": "crm_action",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.701
+        },
+        {
+          "id": "note-confirmation-required",
+          "scenario_type": "controlled_note",
+          "category": "action_safety",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 11.713
+        },
+        {
+          "id": "note-stale-confirmation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 25.385
+        },
+        {
+          "id": "note-timeout-reconciliation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 24.66
+        },
+        {
+          "id": "unauthorized-note-action",
+          "scenario_type": "controlled_note",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 2.789
+        },
+        {
+          "id": "human-handoff-lifecycle",
+          "scenario_type": "handoff",
+          "category": "human_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [
+            "[KB-TELEMETRY-DELAY v2.1]",
+            "[CALL-4821-20261105 v1.0]",
+            "[CASE-NOTE-4821 v1.0]",
+            "[POL-TELEMETRY-RESPONSE v2.0]"
+          ],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 34.756
+        },
+        {
+          "id": "mandatory-sla-backup-routing",
+          "scenario_type": "sla",
+          "category": "sla_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 14.944
+        }
+      ]
+    },
+    "hybrid": {
+      "scenario_count": 18,
+      "scenario_run_count": 90,
+      "passed_scenario_runs": 90,
+      "failed_scenario_runs": 0,
+      "task_success_rate": 1,
+      "recall_at_5": 1.0,
+      "precision_at_3": 0.381,
+      "evidence_sufficiency_accuracy": 1,
+      "grounded_answer_accuracy": 1,
+      "policy_applicability_accuracy": 1,
+      "authorization_safety_rate": 1,
+      "action_safety_rate": 1,
+      "escalation_correctness": 1,
+      "recovery_success_rate": 1,
+      "retrieval_latency_p50_ms": 15.142,
+      "retrieval_latency_p95_ms": 29.505,
+      "tool_execution_latency_p50_ms": 7.045,
+      "tool_execution_latency_p95_ms": 21.412,
+      "end_to_end_latency_p50_ms": 18.047,
+      "end_to_end_latency_p95_ms": 29.969,
+      "retrieval_observation_count": 40,
+      "tool_observation_count": 125,
+      "end_to_end_observation_count": 90,
+      "effective_modes": {
+        "hybrid": 40
+      },
+      "generation_modes": {
+        "not_applicable": 40,
+        "deterministic": 50
+      },
+      "fallback_count": 0,
+      "failure_categories": {},
+      "index_status": "disk",
+      "index_error": null,
+      "examples": [
+        {
+          "id": "ticket-status-fast-path",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 5.735
+        },
+        {
+          "id": "premium-escalation-evidence",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 22.131
+        },
+        {
+          "id": "premium-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.898
+        },
+        {
+          "id": "standard-policy-applicability",
+          "scenario_type": "chat",
+          "category": "policy_applicability",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "POL-TELEMETRY-RESPONSE-v1.0",
+            "CASE-NOTE-4824-v1.0"
+          ],
+          "returned_source_ids": [
+            "CASE-NOTE-4824",
+            "ENT-1002-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 23.13
+        },
+        {
+          "id": "insufficient-evidence",
+          "scenario_type": "chat",
+          "category": "insufficient_evidence",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 19.334
+        },
+        {
+          "id": "unauthorized-case",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 3.075
+        },
+        {
+          "id": "telemetry-diagnostics-exact",
+          "scenario_type": "chat",
+          "category": "exact_match",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CALL-4821-20261105-v1.0",
+            "KB-TELEMETRY-DELAY-v2.1",
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "KB-TELEMETRY-DELAY"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.747
+        },
+        {
+          "id": "escalation-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "CALL-4821-20261105-v1.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 17.335
+        },
+        {
+          "id": "call-transcript-paraphrase",
+          "scenario_type": "chat",
+          "category": "paraphrased",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CALL-4821-20261105-v1.0",
+            "CASE-NOTE-4821-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 39.452
+        },
+        {
+          "id": "unauthorized-paraphrase",
+          "scenario_type": "chat",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "insufficient",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 4.298
+        },
+        {
+          "id": "multi-source-case-investigation",
+          "scenario_type": "chat",
+          "category": "ticket_investigation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "sufficient",
+          "selected_document_ids": [
+            "CASE-NOTE-4821-v1.0",
+            "CALL-4821-20261105-v1.0",
+            "POL-TELEMETRY-RESPONSE-v2.0",
+            "KB-TELEMETRY-DELAY-v2.1"
+          ],
+          "returned_source_ids": [
+            "CALL-4821-20261105",
+            "CASE-NOTE-4821",
+            "ENT-1001-TELEMETRY",
+            "POL-TELEMETRY-RESPONSE"
+          ],
+          "grounded_answer_correct": true,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 18.736
+        },
+        {
+          "id": "note-confirmation-idempotency",
+          "scenario_type": "controlled_note",
+          "category": "crm_action",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 15.171
+        },
+        {
+          "id": "note-confirmation-required",
+          "scenario_type": "controlled_note",
+          "category": "action_safety",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 9.489
+        },
+        {
+          "id": "note-stale-confirmation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 19.105
+        },
+        {
+          "id": "note-timeout-reconciliation",
+          "scenario_type": "controlled_note",
+          "category": "failure_recovery",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 22.294
+        },
+        {
+          "id": "unauthorized-note-action",
+          "scenario_type": "controlled_note",
+          "category": "unauthorized_access",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 2.264
+        },
+        {
+          "id": "human-handoff-lifecycle",
+          "scenario_type": "handoff",
+          "category": "human_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [
+            "[KB-TELEMETRY-DELAY v2.1]",
+            "[CALL-4821-20261105 v1.0]",
+            "[POL-TELEMETRY-RESPONSE v2.0]",
+            "[CASE-NOTE-4821 v1.0]"
+          ],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 29.583
+        },
+        {
+          "id": "mandatory-sla-backup-routing",
+          "scenario_type": "sla",
+          "category": "sla_escalation",
+          "success": true,
+          "failure_reason": null,
+          "evidence_status": "not_applicable",
+          "selected_document_ids": [],
+          "returned_source_ids": [],
+          "grounded_answer_correct": null,
+          "fallback_reason": null,
+          "end_to_end_latency_p50_ms": 11.431
+        }
+      ]
+    }
+  }
+}
