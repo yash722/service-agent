@@ -21,8 +21,16 @@ def main() -> int:
     )
     args = parser.parse_args()
     settings = Settings.from_environment()
-    configure_logging(settings.log_level)
-    database = Database(settings.database_path)
+    configure_logging(
+        settings.log_level,
+        json_logs=settings.log_json,
+        trace_enabled=settings.trace_enabled,
+    )
+    database = Database(
+        settings.database_path,
+        timeout_seconds=settings.sqlite_timeout_seconds,
+        busy_timeout_ms=settings.sqlite_busy_timeout_ms,
+    )
     database.initialize()
     result = SLAService(
         database,

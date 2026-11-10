@@ -49,6 +49,15 @@ TICKETS: tuple[tuple[str, str, str, str, str, str, str], ...] = (
         "Tier 1 Support",
         "2026-11-02T18:20:00Z",
     ),
+    (
+        "CASE-4825",
+        "CUST-1001",
+        "Telemetry export backlog after connector certificate rotation",
+        "Resolved",
+        "High",
+        "Tier 2 Support",
+        "2026-11-01T12:40:00Z",
+    ),
 )
 
 ENTITLEMENTS: tuple[tuple[str, str, str, str, str, str, str | None], ...] = (
@@ -95,19 +104,28 @@ SLA_DEADLINES: tuple[tuple[str, str], ...] = (
     ("2026-11-08T14:15:00Z", "CASE-4822"),
     ("2026-11-10T16:45:00Z", "CASE-4823"),
     ("2026-11-09T18:20:00Z", "CASE-4824"),
+    ("2026-11-01T12:00:00Z", "CASE-4825"),
 )
 
 
 class Database:
-    def __init__(self, path: str | Path):
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        timeout_seconds: float = 5.0,
+        busy_timeout_ms: int = 5000,
+    ):
         self.path = Path(path)
+        self.timeout_seconds = timeout_seconds
+        self.busy_timeout_ms = busy_timeout_ms
 
     @contextmanager
     def connect(self) -> Iterator[sqlite3.Connection]:
-        connection = sqlite3.connect(self.path, timeout=5.0)
+        connection = sqlite3.connect(self.path, timeout=self.timeout_seconds)
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 5000")
+        connection.execute(f"PRAGMA busy_timeout = {self.busy_timeout_ms}")
         try:
             with connection:
                 yield connection

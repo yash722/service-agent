@@ -88,6 +88,10 @@ def test_complex_request_uses_langgraph_and_mock_tools(app: FastAPI) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["intent"] == "complex_request"
+    assert body["generation_debug"]["latency_ms"] >= 0
+    assert "finish_reason" in body["generation_debug"]
+    assert "output_tokens" in body["generation_debug"]
+    assert body["total_latency_ms"] >= body["generation_debug"]["latency_ms"]
     assert body["steps"] == [
         "workflow:triage",
         "mock_crm:get_ticket",

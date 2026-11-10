@@ -4,6 +4,7 @@ from pathlib import Path
 
 from servicing_agent.auth import DEMO_USERS
 from servicing_agent.database import Database
+from servicing_agent.evaluation import asserts_unsupported_claim
 from servicing_agent.service import ChatService
 
 
@@ -38,3 +39,21 @@ def test_golden_servicing_questions(tmp_path) -> None:
             assert response.citations == [], example["id"]
         for expected_text in example["expected_contains"]:
             assert expected_text in response.reply, example["id"]
+        for expected_fact in example.get("expected_facts", []):
+            assert expected_fact in response.reply, example["id"]
+        for unsupported_claim in example.get("unsupported_claims", []):
+            assert not asserts_unsupported_claim(
+                response.reply, unsupported_claim
+            ), example["id"]
+        required = example.get("required_evidence", {})
+        assert set(required.get("source_ids", [])).issubset(
+            returned_source_ids
+        ), example["id"]
+        selected_document_ids = (
+            set(response.retrieval_debug.selected_document_ids)
+            if response.retrieval_debug
+            else set()
+        )
+        assert set(required.get("document_ids", [])).issubset(
+            selected_document_ids
+        ), example["id"]

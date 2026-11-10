@@ -1,40 +1,31 @@
 from __future__ import annotations
 
 import asyncio
-import os
 from pathlib import Path
 
 import httpx
 import pytest
 
 from servicing_agent.api import create_app
-
-
-REQUIRED_ENVIRONMENT = (
-    "SNOWFLAKE_ACCOUNT",
-    "SNOWFLAKE_USER",
-    "SNOWFLAKE_ROLE",
-    "SNOWFLAKE_WAREHOUSE",
-    "SNOWFLAKE_DATABASE",
-    "SNOWFLAKE_SCHEMA",
-    "SNOWFLAKE_PRIVATE_KEY_FILE",
-    "SNOWFLAKE_PRIVATE_KEY_PASSWORD",
-)
+from servicing_agent.settings import Settings, snowflake_integration_requested
 
 
 @pytest.mark.snowflake_integration
-@pytest.mark.skipif(
-    os.getenv("RUN_SNOWFLAKE_INTEGRATION") != "1",
-    reason="Set RUN_SNOWFLAKE_INTEGRATION=1 to query real Snowflake history.",
-)
 def test_real_snowflake_history_through_fastapi_and_langgraph(
     tmp_path: Path, monkeypatch
 ) -> None:
-    missing = [name for name in REQUIRED_ENVIRONMENT if not os.getenv(name)]
-    assert not missing, f"Missing required Snowflake environment names: {missing}"
+    if not snowflake_integration_requested():
+        pytest.skip(
+            "Set RUN_SNOWFLAKE_INTEGRATION=1 to query real Snowflake history."
+        )
     monkeypatch.setenv("HISTORY_BACKEND", "snowflake")
     monkeypatch.setenv("RETRIEVAL_MODE", "lexical")
-    app = create_app(tmp_path / "snowflake-integration.db", configure_logs=False)
+    settings = Settings.from_environment()
+    app = create_app(
+        tmp_path / "snowflake-integration.db",
+        configure_logs=False,
+        settings_override=settings,
+    )
 
     async def invoke() -> httpx.Response:
         async with app.router.lifespan_context(app):
@@ -65,4 +56,17 @@ def test_real_snowflake_history_through_fastapi_and_langgraph(
     assert any(
         citation["source_id"].startswith("SF-")
         for citation in body["citations"]
+    )
+    history_citations = [
+        citation
+        for citation in body["citations"]
+        if citation["source_id"].startswith("SF-")
+    ]
+    assert any(
+        citation["effective_date"].startswith("2026-11-05")
+        for citation in history_citations
+    )
+    assert all(
+        not citation["effective_date"].startswith("2026-11-09")
+        for citation in history_citations
     )

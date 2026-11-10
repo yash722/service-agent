@@ -38,15 +38,24 @@ def create_app(
     database_path: str | Path | None = None,
     *,
     configure_logs: bool = True,
+    settings_override: Settings | None = None,
 ) -> FastAPI:
-    settings = Settings.from_environment()
+    settings = settings_override or Settings.from_environment()
     resolved_database_path = Path(database_path or settings.database_path)
     if configure_logs:
-        configure_logging(settings.log_level)
+        configure_logging(
+            settings.log_level,
+            json_logs=settings.log_json,
+            trace_enabled=settings.trace_enabled,
+        )
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        database = Database(resolved_database_path)
+        database = Database(
+            resolved_database_path,
+            timeout_seconds=settings.sqlite_timeout_seconds,
+            busy_timeout_ms=settings.sqlite_busy_timeout_ms,
+        )
         database.initialize()
         chat_service = ChatService(database, settings=settings)
         app.state.chat_service = chat_service
@@ -64,7 +73,7 @@ def create_app(
 
     app = FastAPI(
         title="FDE Servicing Agent",
-        version="0.4.1",
+        version="0.4.2",
         description=(
             "Milestone 4 servicing PoC with opt-in read-only Snowflake history"
         ),
@@ -342,4 +351,22 @@ def create_app(
 
 
 app = create_app()
+
+
+def main() -> None:
+    import uvicorn
+
+    settings = Settings.from_environment()
+    target = "servicing_agent.api:app" if settings.api_reload else app
+    uvicorn.run(
+        target,
+        host=settings.api_host,
+        port=settings.api_port,
+        reload=settings.api_reload,
+        log_level=settings.log_level.lower(),
+    )
+
+
+if __name__ == "__main__":
+    main()
 

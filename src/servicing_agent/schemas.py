@@ -47,6 +47,14 @@ class HistoryDebug(BaseModel):
     failure_category: str | None = None
 
 
+class GenerationDebug(BaseModel):
+    mode: Literal["deterministic", "llm"]
+    latency_ms: float
+    fallback_reason: str | None = None
+    finish_reason: str | None = None
+    output_tokens: int | None = None
+
+
 OperationState = Literal["PENDING", "COMPLETED", "FAILED", "UNKNOWN"]
 HandoffState = Literal["CREATED", "ACCEPTED", "RESOLVED"]
 
@@ -169,5 +177,7 @@ class ChatResponse(BaseModel):
     trace: list[str] = Field(default_factory=list)
     retrieval_debug: RetrievalDebug | None = None
     history_debug: HistoryDebug | None = None
+    generation_debug: GenerationDebug | None = None
+    total_latency_ms: float = 0.0
     sla: SLAStatusResponse | None = None
 

@@ -14,6 +14,8 @@ def test_demo_scenarios_cover_required_read_paths() -> None:
         "multi_source",
         "premium_policy",
         "standard_policy",
+        "unknown_diagnostics",
+        "resolved_incident",
         "unauthorized",
     }
     unauthorized = next(item for item in DEMO_SCENARIOS if item.key == "unauthorized")

@@ -14,31 +14,34 @@ from servicing_agent.history import (
     SnowflakeHistoryConfig,
 )
 from servicing_agent.service import ChatService
+from servicing_agent.settings import Settings
 
 
 TABLE_COLUMNS = {
     "CUSTOMER_ACTIVITY": (
         "ACTIVITY_ID",
         "CUSTOMER_ID",
-        "ACTIVITY_TYPE",
-        "ACTIVITY_TS",
-        "DESCRIPTION",
+        "PRODUCT_ID",
+        "EVENT_TYPE",
+        "EVENT_DESCRIPTION",
+        "EVENT_TIME",
     ),
     "CASE_HISTORY": (
         "HISTORY_ID",
         "CASE_ID",
         "CUSTOMER_ID",
         "STATUS",
-        "EVENT_TS",
+        "EVENT_TIME",
         "DESCRIPTION",
     ),
     "SUPPORT_INTERACTIONS": (
         "INTERACTION_ID",
         "CASE_ID",
         "CUSTOMER_ID",
-        "CHANNEL",
-        "INTERACTION_TS",
+        "TRANSCRIPT_ID",
+        "INTERACTION_TYPE",
         "SUMMARY",
+        "EVENT_TIME",
     ),
 }
 
@@ -47,9 +50,10 @@ TABLE_ROWS = {
         (
             "ACT-100",
             "CUST-1001",
+            "PRD-TELEMETRY",
             "Telemetry alert",
-            datetime(2026, 11, 5, 13, tzinfo=timezone.utc),
             "Repeated delayed telemetry windows were recorded.",
+            datetime(2026, 11, 5, 13, tzinfo=timezone.utc),
         )
     ],
     "CASE_HISTORY": [
@@ -67,9 +71,10 @@ TABLE_ROWS = {
             "INT-100",
             "CASE-4821",
             "CUST-1001",
+            "CALL-4821-20261105",
             "Phone",
-            datetime(2026, 11, 5, 15, tzinfo=timezone.utc),
             "Customer reported a delay near twenty minutes.",
+            datetime(2026, 11, 5, 15, tzinfo=timezone.utc),
         )
     ],
 }
@@ -183,6 +188,11 @@ def test_snowflake_adapter_uses_parameterized_read_only_queries_and_cleanup(
         "SUPPORT_INTERACTIONS": 1,
     }
     assert all(record.source_id.startswith("SF-") for record in result.records)
+    assert {record.event_at for record in result.records} == {
+        "2026-11-05T13:00:00Z",
+        "2026-11-05T14:00:00Z",
+        "2026-11-05T15:00:00Z",
+    }
     assert connector.connection.cursor_instance.closed is True
     assert connector.connection.closed is True
     assert connector.kwargs["authenticator"] == "SNOWFLAKE_JWT"
@@ -342,12 +352,12 @@ def test_snowflake_config_does_not_reveal_passphrase(tmp_path, monkeypatch) -> N
         "SNOWFLAKE_DATABASE": "SERVICING_AGENT_DEMO",
         "SNOWFLAKE_SCHEMA": "HISTORY",
         "SNOWFLAKE_PRIVATE_KEY_FILE": str(key_path),
-        "SNOWFLAKE_PRIVATE_KEY_PASSWORD": "do-not-display",
+        "SNOWFLAKE_PRIVATE_KEY_PASSPHRASE": "do-not-display",
     }
     for name, value in values.items():
         monkeypatch.setenv(name, value)
 
-    loaded = SnowflakeHistoryConfig.from_environment()
+    loaded = SnowflakeHistoryConfig.from_settings(Settings.from_environment())
 
     assert loaded.private_key_password == "do-not-display"
     assert "do-not-display" not in repr(loaded)

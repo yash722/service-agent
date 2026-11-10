@@ -1,0 +1,168 @@
+{
+  "history_backend": "snowflake",
+  "max_tokens": 512,
+  "model": "qwen3:4b",
+  "questions": [
+    {
+      "id": "still_investigating",
+      "question": "Why is CASE-4821 still under investigation?"
+    },
+    {
+      "id": "escalation_reason",
+      "question": "Why was CASE-4821 escalated?"
+    }
+  ],
+  "retrieval_mode": "hybrid",
+  "runs": [
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 112094.915,
+      "output_tokens": 512,
+      "question_id": "still_investigating",
+      "repetition": 1,
+      "snowflake_record_count": 3,
+      "total_ms": 116959.922
+    },
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 112516.191,
+      "output_tokens": 512,
+      "question_id": "still_investigating",
+      "repetition": 2,
+      "snowflake_record_count": 3,
+      "total_ms": 115669.471
+    },
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 116870.202,
+      "output_tokens": 512,
+      "question_id": "still_investigating",
+      "repetition": 3,
+      "snowflake_record_count": 3,
+      "total_ms": 120448.587
+    },
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 117613.771,
+      "output_tokens": 512,
+      "question_id": "escalation_reason",
+      "repetition": 1,
+      "snowflake_record_count": 3,
+      "total_ms": 121695.363
+    },
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 114144.24,
+      "output_tokens": 512,
+      "question_id": "escalation_reason",
+      "repetition": 2,
+      "snowflake_record_count": 3,
+      "total_ms": 117611.941
+    },
+    {
+      "answer_relevant": true,
+      "citation_source_ids": [
+        "CRM-CASE-4821",
+        "CASE-NOTE-4821",
+        "SF-CASE-HISTORY-HIST-001"
+      ],
+      "citation_valid": true,
+      "fallback": true,
+      "fallback_reason": "LLM output was incomplete (finish_reason=length).",
+      "finish_reason": "length",
+      "generation_mode": "deterministic",
+      "generation_ms": 60589.788,
+      "output_tokens": 512,
+      "question_id": "escalation_reason",
+      "repetition": 3,
+      "snowflake_record_count": 3,
+      "total_ms": 64490.581
+    }
+  ],
+  "summary": {
+    "escalation_reason": {
+      "answer_relevance_rate": 1.0,
+      "citation_valid_rate": 1.0,
+      "fallback_rate": 1.0,
+      "finish_reasons": {
+        "length": 3
+      },
+      "generation_ms_mean": 97449.266,
+      "generation_ms_p50": 114144.24,
+      "generation_ms_p95": 117613.771,
+      "output_tokens_mean": 512,
+      "runs": 3,
+      "total_ms_mean": 101265.962,
+      "total_ms_p50": 117611.941,
+      "total_ms_p95": 121695.363
+    },
+    "still_investigating": {
+      "answer_relevance_rate": 1.0,
+      "citation_valid_rate": 1.0,
+      "fallback_rate": 1.0,
+      "finish_reasons": {
+        "length": 3
+      },
+      "generation_ms_mean": 113827.103,
+      "generation_ms_p50": 112516.191,
+      "generation_ms_p95": 116870.202,
+      "output_tokens_mean": 512,
+      "runs": 3,
+      "total_ms_mean": 117692.66,
+      "total_ms_p50": 116959.922,
+      "total_ms_p95": 120448.587
+    }
+  },
+  "timeout_seconds": 120.0,
+  "warmup_excluded": true
+}

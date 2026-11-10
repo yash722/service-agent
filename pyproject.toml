@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fde-servicing-agent"
-version = "0.4.1"
+version = "0.4.2"
 description = "Evaluation-driven FDE Servicing Agent PoC with opt-in Snowflake history"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = [
     "httpx>=0.27,<1",
     "langgraph>=0.2,<2",
     "pydantic>=2.9,<3",
+    "python-dotenv>=1.0,<2",
     "streamlit>=1.40,<2",
     "uvicorn[standard]>=0.30,<1",
 ]
@@ -42,5 +43,6 @@ testpaths = ["tests"]
 addopts = "-q"
 markers = [
     "snowflake_integration: opt-in test against configured Snowflake history",
+    "ollama_integration: opt-in test against local Ollama OpenAI-compatible API",
 ]
 

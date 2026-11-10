@@ -45,8 +45,28 @@ DEMO_SCENARIOS: tuple[DemoScenario, ...] = (
         expected="Verified Standard entitlement selects approved policy v1.0.",
     ),
     DemoScenario(
+        key="unknown_diagnostics",
+        label="5 · Deliberately unknown diagnostics",
+        demo_user="demo-agent-alex",
+        prompt="Were the requested connector diagnostic logs received for CASE-4821?",
+        expected=(
+            "Protected evidence confirms the request but says receipt is not "
+            "recorded; it does not infer that the logs were or were not sent."
+        ),
+    ),
+    DemoScenario(
+        key="resolved_incident",
+        label="6 · Confirmed resolved incident",
+        demo_user="demo-agent-alex",
+        prompt="What was confirmed and completed to resolve CASE-4825?",
+        expected=(
+            "The answer cites the CASE-4825 resolution record and keeps its "
+            "completed actions separate from unresolved CASE-4821."
+        ),
+    ),
+    DemoScenario(
         key="unauthorized",
-        label="5 · Unauthorized customer access",
+        label="7 · Unauthorized customer access",
         demo_user="demo-agent-jordan",
         prompt="Why was CASE-4821 escalated?",
         expected="No protected evidence, rankings, prompt context, or citations are returned.",

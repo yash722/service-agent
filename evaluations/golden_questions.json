@@ -49,7 +49,12 @@
     "expected_evidence_status": "sufficient",
     "expected_source_ids": ["ENT-1002-TELEMETRY", "POL-TELEMETRY-RESPONSE"],
     "relevant_document_ids": ["POL-TELEMETRY-RESPONSE-v1.0"],
-    "expected_contains": ["Standard", "eight business hours"]
+    "expected_contains": ["Standard", "eight business hours"],
+    "unsupported_claims": ["must be escalated", "requires escalation"],
+    "answer_quality_checks": {
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
   },
   {
     "id": "insufficient-evidence",
@@ -145,6 +150,190 @@
     "expected_source_ids": ["CASE-NOTE-4821", "CALL-4821-20261105"],
     "relevant_document_ids": ["CASE-NOTE-4821-v1.0", "CALL-4821-20261105-v1.0"],
     "expected_contains": ["three consecutive synchronization windows", "forty to sixty minutes late"]
+  },
+  {
+    "id": "case-4821-unresolved-investigation",
+    "scenario_type": "chat",
+    "category": "ticket_investigation",
+    "regression": true,
+    "evaluate_retrieval": true,
+    "demo_user": "demo-agent-alex",
+    "question": "Why is CASE-4821 still under investigation?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "sufficient",
+    "expected_source_ids": ["CASE-NOTE-4821"],
+    "relevant_document_ids": ["CASE-NOTE-4821-v1.0"],
+    "expected_contains": [
+      "does not confirm a single reason",
+      "three consecutive synchronization windows"
+    ],
+    "expected_facts": [
+      "three consecutive synchronization windows",
+      "connector retries"
+    ],
+    "unsupported_claims": [
+      "definitive root cause was connector retries",
+      "controlled index rebuild was completed",
+      "will be resolved"
+    ],
+    "required_evidence": {
+      "source_ids": ["CASE-NOTE-4821"],
+      "document_ids": ["CASE-NOTE-4821-v1.0"]
+    },
+    "authorization_expectation": "allowed",
+    "answer_quality_checks": {
+      "must_answer_directly": true,
+      "must_state_uncertainty": true,
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
+  },
+  {
+    "id": "case-4821-diagnostic-logs-unknown",
+    "scenario_type": "chat",
+    "category": "unknown_information",
+    "regression": true,
+    "evaluate_retrieval": true,
+    "demo_user": "demo-agent-alex",
+    "question": "Were the requested connector diagnostic logs received for CASE-4821?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "sufficient",
+    "expected_source_ids": ["CASE-DIAG-4821"],
+    "relevant_document_ids": ["CASE-DIAG-4821-v1.0"],
+    "expected_contains": ["Receipt of the requested logs is not recorded"],
+    "expected_facts": ["Support requested connector diagnostic logs"],
+    "unsupported_claims": [
+      "the customer declined",
+      "the logs were received",
+      "the logs were not sent"
+    ],
+    "required_evidence": {
+      "source_ids": ["CASE-DIAG-4821"],
+      "document_ids": ["CASE-DIAG-4821-v1.0"]
+    },
+    "authorization_expectation": "allowed",
+    "answer_quality_checks": {
+      "must_answer_directly": true,
+      "must_state_uncertainty": true,
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
+  },
+  {
+    "id": "resolved-telemetry-incident",
+    "scenario_type": "chat",
+    "category": "resolved_incident",
+    "regression": true,
+    "evaluate_retrieval": true,
+    "demo_user": "demo-agent-alex",
+    "question": "What was confirmed and completed to resolve CASE-4825?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "sufficient",
+    "expected_source_ids": ["CASE-NOTE-4825"],
+    "relevant_document_ids": ["CASE-NOTE-4825-v1.0"],
+    "expected_contains": [
+      "expired connector certificate",
+      "queued export replay completed"
+    ],
+    "expected_facts": [
+      "certificate rotation was completed",
+      "backlog cleared"
+    ],
+    "unsupported_claims": [
+      "CASE-4821 rebuild was completed",
+      "CASE-4821 was resolved"
+    ],
+    "required_evidence": {
+      "source_ids": ["CASE-NOTE-4825"],
+      "document_ids": ["CASE-NOTE-4825-v1.0"]
+    },
+    "authorization_expectation": "allowed",
+    "answer_quality_checks": {
+      "must_answer_directly": true,
+      "must_state_confirmed_completion": true,
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
+  },
+  {
+    "id": "resolved-billing-service-request",
+    "scenario_type": "chat",
+    "category": "resolved_incident",
+    "regression": false,
+    "evaluate_retrieval": true,
+    "demo_user": "demo-agent-alex",
+    "question": "How was CASE-4822 completed and confirmed?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "sufficient",
+    "expected_source_ids": ["CASE-NOTE-4822"],
+    "relevant_document_ids": ["CASE-NOTE-4822-v1.0"],
+    "expected_contains": ["verified an authorized", "marked Resolved"],
+    "expected_facts": [
+      "billing-contact update was completed",
+      "Luis confirmed the corrected contact"
+    ],
+    "unsupported_claims": ["the servicing assistant changed the billing contact"],
+    "required_evidence": {
+      "source_ids": ["CASE-NOTE-4822"],
+      "document_ids": ["CASE-NOTE-4822-v1.0"]
+    },
+    "authorization_expectation": "allowed",
+    "answer_quality_checks": {
+      "must_state_confirmed_completion": true,
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
+  },
+  {
+    "id": "dashboard-standard-policy-applicability",
+    "scenario_type": "chat",
+    "category": "policy_applicability",
+    "regression": true,
+    "evaluate_retrieval": true,
+    "demo_user": "demo-agent-jordan",
+    "question": "What initial response target applies to CASE-4823?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "sufficient",
+    "expected_source_ids": ["ENT-1003-DASHBOARD", "POL-DASHBOARD-RESPONSE"],
+    "relevant_document_ids": ["POL-DASHBOARD-RESPONSE-v1.0"],
+    "expected_contains": ["Standard", "twelve business hours"],
+    "expected_facts": ["active Standard subscription"],
+    "unsupported_claims": ["two clock hours", "Premium entitlement"],
+    "required_evidence": {
+      "source_ids": ["ENT-1003-DASHBOARD", "POL-DASHBOARD-RESPONSE"],
+      "document_ids": ["POL-DASHBOARD-RESPONSE-v1.0"]
+    },
+    "authorization_expectation": "allowed",
+    "answer_quality_checks": {
+      "must_use_citations": true,
+      "must_avoid_unsupported_claims": true
+    }
+  },
+  {
+    "id": "unauthorized-cross-customer-dashboard",
+    "scenario_type": "chat",
+    "category": "unauthorized_access",
+    "regression": true,
+    "evaluate_retrieval": false,
+    "demo_user": "demo-agent-alex",
+    "question": "What diagnostic information is missing for CASE-4823?",
+    "expected_intent": "complex_request",
+    "expected_evidence_status": "insufficient",
+    "expected_source_ids": [],
+    "relevant_document_ids": [],
+    "expected_contains": ["not authorized"],
+    "expected_facts": [],
+    "unsupported_claims": ["mobile application version", "affected timestamp"],
+    "required_evidence": {
+      "source_ids": [],
+      "document_ids": []
+    },
+    "authorization_expectation": "denied",
+    "answer_quality_checks": {
+      "must_return_no_citations": true,
+      "must_avoid_unsupported_claims": true
+    },
+    "expect_no_citations": true
   },
   {
     "id": "note-confirmation-idempotency",

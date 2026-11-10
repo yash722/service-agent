@@ -22,6 +22,7 @@ def main() -> int:
         mode="semantic",
         embedding_model=settings.retrieval_model,
         embedding_cache_dir=settings.retrieval_cache_dir,
+        top_k=settings.retrieval_top_k,
         rrf_k=settings.retrieval_rrf_k,
         semantic_min_score=settings.retrieval_semantic_min_score,
         semantic_min_top_score=settings.retrieval_semantic_min_top_score,

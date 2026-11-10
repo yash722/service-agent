@@ -351,6 +351,7 @@ class HybridRetrievalService:
         embedding_provider: EmbeddingProvider | None = None,
         embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2",
         embedding_cache_dir: str | Path = "data/embedding_cache",
+        top_k: int = 5,
         rrf_k: int = 60,
         semantic_min_score: float = 0.25,
         semantic_min_top_score: float = 0.45,
@@ -361,12 +362,15 @@ class HybridRetrievalService:
             )
         if rrf_k <= 0:
             raise ValueError("RRF k must be positive")
+        if top_k <= 0:
+            raise ValueError("retrieval top_k must be positive")
         self.documents = tuple(
             documents if documents is not None else load_default_corpus()
         )
         self.mode = str(mode)
         self.embedding_model = embedding_model
         self.embedding_cache_dir = Path(embedding_cache_dir)
+        self.top_k = top_k
         self.rrf_k = rrf_k
         self.semantic_min_score = semantic_min_score
         self.semantic_min_top_score = semantic_min_top_score
@@ -395,9 +399,12 @@ class HybridRetrievalService:
         customer_id: str | None,
         case_id: str | None,
         entitlements: list[dict[str, Any]],
-        top_k: int = 5,
+        top_k: int | None = None,
     ) -> RetrievalResult:
         started = time.perf_counter()
+        selected_limit = self.top_k if top_k is None else top_k
+        if selected_limit <= 0:
+            raise ValueError("retrieval top_k must be positive")
         eligible, warnings = self._eligible_documents(
             query,
             as_of=as_of,
@@ -434,7 +441,7 @@ class HybridRetrievalService:
         else:
             final_ranking = rankings.get(effective_mode, [])
 
-        selected_items = tuple(final_ranking[:top_k])
+        selected_items = tuple(final_ranking[:selected_limit])
         selected = tuple(
             RetrievedEvidence(item.document, round(item.score, 8))
             for item in selected_items

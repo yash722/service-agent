@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from datetime import date, timedelta
 from uuid import uuid4
 
@@ -45,6 +46,13 @@ def build_answer_generator(settings: Settings) -> GroundedAnswerGenerator:
                 model=settings.llm_model,
                 api_base=settings.llm_api_base,
                 timeout_seconds=settings.llm_timeout_seconds,
+                temperature=settings.llm_temperature,
+                max_tokens=settings.llm_max_tokens,
+                reasoning_effort=settings.llm_reasoning_effort,
+                history_record_limit=settings.history_llm_record_limit,
+                fallback_history_record_limit=(
+                    settings.history_answer_record_limit
+                ),
             )
         )
     if settings.llm_provider not in {"none", "openai_compatible"}:
@@ -56,14 +64,16 @@ def build_answer_generator(settings: Settings) -> GroundedAnswerGenerator:
         )
     elif settings.llm_provider == "openai_compatible" and not settings.llm_api_key:
         log_event(logger, "llm.disabled", reason="missing_api_key")
-    return DeterministicGroundedGenerator()
+    return DeterministicGroundedGenerator(
+        settings.history_answer_record_limit
+    )
 
 
 def build_history_adapter(settings: Settings) -> HistoryAdapter:
     if settings.history_backend == "mock":
         return MockHistoryAdapter()
     if settings.history_backend == "snowflake":
-        return SnowflakeHistoryAdapter(SnowflakeHistoryConfig.from_environment())
+        return SnowflakeHistoryAdapter(SnowflakeHistoryConfig.from_settings(settings))
     raise ValueError(
         "HISTORY_BACKEND must be either 'mock' or 'snowflake'."
     )
@@ -89,6 +99,7 @@ class ChatService:
             mode=settings.retrieval_mode,
             embedding_model=settings.retrieval_model,
             embedding_cache_dir=settings.retrieval_cache_dir,
+            top_k=settings.retrieval_top_k,
             rrf_k=settings.retrieval_rrf_k,
             semantic_min_score=settings.retrieval_semantic_min_score,
             semantic_min_top_score=settings.retrieval_semantic_min_top_score,
@@ -112,6 +123,7 @@ class ChatService:
         )
 
     def chat(self, message: str, user_context: DemoUserContext) -> ChatResponse:
+        started = time.perf_counter()
         execution_id = str(uuid4())
         intent = route_intent(message)
         case_id = extract_ticket_id(message)
@@ -151,8 +163,12 @@ class ChatService:
                 trace=result["trace"],
                 retrieval_debug=result.get("retrieval_debug"),
                 history_debug=result.get("history_debug"),
+                generation_debug=result.get("generation_debug"),
             )
 
+        response.total_latency_ms = round(
+            (time.perf_counter() - started) * 1000, 3
+        )
         log_event(
             logger,
             "chat.completed",
@@ -161,6 +177,37 @@ class ChatService:
             step_count=len(response.steps),
             evidence_status=response.evidence_status,
             generation_mode=response.generation_mode,
+            total_latency_ms=response.total_latency_ms,
+            retrieval_latency_ms=(
+                response.retrieval_debug.latency_ms
+                if response.retrieval_debug
+                else None
+            ),
+            history_latency_ms=(
+                response.history_debug.latency_ms
+                if response.history_debug
+                else None
+            ),
+            generation_latency_ms=(
+                response.generation_debug.latency_ms
+                if response.generation_debug
+                else None
+            ),
+            generation_fallback_reason=(
+                response.generation_debug.fallback_reason
+                if response.generation_debug
+                else None
+            ),
+            generation_finish_reason=(
+                response.generation_debug.finish_reason
+                if response.generation_debug
+                else None
+            ),
+            generation_output_tokens=(
+                response.generation_debug.output_tokens
+                if response.generation_debug
+                else None
+            ),
             citation_count=len(response.citations),
             history_backend=(
                 response.history_debug.backend if response.history_debug else None

@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Literal, Mapping, Protocol, Sequence
 
 from .auth import DemoUserContext
+
+if TYPE_CHECKING:
+    from .settings import Settings
 
 
 HistoryStatus = Literal["available", "empty", "unavailable", "not_applicable"]
@@ -26,6 +28,7 @@ _IDENTIFIER_COLUMNS = (
     "ID",
 )
 _TIMESTAMP_COLUMNS = (
+    "EVENT_TIME",
     "ACTIVITY_TIMESTAMP",
     "ACTIVITY_TS",
     "EVENT_TIMESTAMP",
@@ -160,61 +163,37 @@ class SnowflakeHistoryConfig:
     network_timeout_seconds: int = 30
     query_timeout_seconds: int = 20
     row_limit_per_table: int = 25
+    query_tag: str = "fde_servicing_agent_history_read"
+    application: str = "FDE_SERVICING_AGENT_POC"
 
     @classmethod
-    def from_environment(cls) -> "SnowflakeHistoryConfig":
-        required = {
-            "account": "SNOWFLAKE_ACCOUNT",
-            "user": "SNOWFLAKE_USER",
-            "role": "SNOWFLAKE_ROLE",
-            "warehouse": "SNOWFLAKE_WAREHOUSE",
-            "database": "SNOWFLAKE_DATABASE",
-            "schema": "SNOWFLAKE_SCHEMA",
-            "private_key_file": "SNOWFLAKE_PRIVATE_KEY_FILE",
-            "private_key_password": "SNOWFLAKE_PRIVATE_KEY_PASSWORD",
-        }
-        values = {
-            field_name: os.getenv(variable)
-            for field_name, variable in required.items()
-        }
-        missing = [
-            variable
-            for field_name, variable in required.items()
-            if not values[field_name]
-        ]
+    def from_settings(cls, settings: "Settings") -> "SnowflakeHistoryConfig":
+        missing = settings.missing_snowflake_variables()
         if missing:
             raise HistoryConfigurationError(
                 "Snowflake history is enabled but required environment variables "
                 f"are missing: {', '.join(sorted(missing))}."
             )
-
-        key_path = Path(str(values["private_key_file"])).expanduser()
-        if not key_path.is_file():
+        key_path = settings.snowflake_private_key_file
+        if key_path is None or not key_path.is_file():
             raise HistoryConfigurationError(
                 "SNOWFLAKE_PRIVATE_KEY_FILE does not reference a readable file."
             )
-
         config = cls(
-            account=str(values["account"]),
-            user=str(values["user"]),
-            role=str(values["role"]),
-            warehouse=str(values["warehouse"]),
-            database=str(values["database"]),
-            schema=str(values["schema"]),
+            account=str(settings.snowflake_account),
+            user=str(settings.snowflake_user),
+            role=str(settings.snowflake_role),
+            warehouse=str(settings.snowflake_warehouse),
+            database=str(settings.snowflake_database),
+            schema=str(settings.snowflake_schema),
             private_key_file=key_path,
-            private_key_password=str(values["private_key_password"]),
-            login_timeout_seconds=_positive_int_env(
-                "SNOWFLAKE_LOGIN_TIMEOUT_SECONDS", 20
-            ),
-            network_timeout_seconds=_positive_int_env(
-                "SNOWFLAKE_NETWORK_TIMEOUT_SECONDS", 30
-            ),
-            query_timeout_seconds=_positive_int_env(
-                "SNOWFLAKE_QUERY_TIMEOUT_SECONDS", 20
-            ),
-            row_limit_per_table=_positive_int_env(
-                "SNOWFLAKE_HISTORY_ROW_LIMIT", 25
-            ),
+            private_key_password=str(settings.snowflake_private_key_password),
+            login_timeout_seconds=settings.snowflake_login_timeout_seconds,
+            network_timeout_seconds=settings.snowflake_network_timeout_seconds,
+            query_timeout_seconds=settings.snowflake_query_timeout_seconds,
+            row_limit_per_table=settings.snowflake_history_row_limit,
+            query_tag=settings.snowflake_query_tag,
+            application=settings.snowflake_application,
         )
         for name in ("role", "warehouse", "database", "schema"):
             _validate_identifier(getattr(config, name), name)
@@ -356,9 +335,9 @@ class SnowflakeHistoryAdapter:
                 login_timeout=self.config.login_timeout_seconds,
                 network_timeout=self.config.network_timeout_seconds,
                 client_session_keep_alive=False,
-                application="FDE_SERVICING_AGENT_POC",
+                application=self.config.application,
                 session_parameters={
-                    "QUERY_TAG": "fde_servicing_agent_history_read",
+                    "QUERY_TAG": self.config.query_tag,
                     "STATEMENT_TIMEOUT_IN_SECONDS": self.config.query_timeout_seconds,
                 },
             )
@@ -462,19 +441,6 @@ class SnowflakeHistoryAdapter:
             timeout=self.config.query_timeout_seconds,
         )
         return tuple(str(row[0]).upper() for row in cursor.fetchall())
-
-
-def _positive_int_env(name: str, default: int) -> int:
-    raw = os.getenv(name, str(default))
-    try:
-        value = int(raw)
-    except ValueError as exc:
-        raise HistoryConfigurationError(
-            f"{name} must be a positive integer."
-        ) from exc
-    if value <= 0:
-        raise HistoryConfigurationError(f"{name} must be a positive integer.")
-    return value
 
 
 def _validate_identifier(value: str, label: str) -> None:

@@ -36,6 +36,9 @@ def comparison_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
             "Recall@5": metrics["recall_at_5"],
             "Precision@3": metrics["precision_at_3"],
             "Groundedness": metrics["grounded_answer_accuracy"],
+            "Claim-citation relevance": metrics.get(
+                "claim_citation_relevance", 0.0
+            ),
             "Policy": metrics["policy_applicability_accuracy"],
             "Authorization": metrics["authorization_safety_rate"],
             "Action safety": metrics["action_safety_rate"],
@@ -77,7 +80,13 @@ def scenario_rows(report: dict[str, Any], mode: str) -> list[dict[str, Any]]:
     ]
 
 
-def render_evaluation_dashboard(st: Any, report_path: str | Path) -> None:
+def render_evaluation_dashboard(
+    st: Any,
+    report_path: str | Path,
+    *,
+    evaluation_modes: tuple[str, ...] = ("lexical", "semantic", "hybrid"),
+    evaluation_runs: int = 3,
+) -> None:
     st.subheader("Measured evaluation dashboard")
     st.caption(
         "Metrics below are loaded from a repeatable local evaluation run over "
@@ -87,9 +96,10 @@ def render_evaluation_dashboard(st: Any, report_path: str | Path) -> None:
         report = load_evaluation_report(report_path)
     except EvaluationReportError as exc:
         st.warning(str(exc))
+        modes = " ".join(evaluation_modes)
         st.code(
-            "python -m servicing_agent.evaluation --modes lexical semantic hybrid "
-            "--runs 3 --output evaluations\\latest_results.json",
+            f"python -m servicing_agent.evaluation --modes {modes} "
+            f"--runs {evaluation_runs} --output {report_path}",
             language="powershell",
         )
         return

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics
 import tempfile
 import time
@@ -17,8 +18,10 @@ from .generation import (
     DeterministicGroundedGenerator,
     GroundedAnswerGenerator,
     OpenAICompatibleGroundedGenerator,
+    citation_supports_claim,
 )
 from .handoffs import CaseHandoffService
+from .history import MockHistoryAdapter
 from .logging_config import configure_logging
 from .retrieval import (
     EmbeddingProvider,
@@ -57,6 +60,43 @@ def _latency_summary(values: Sequence[float]) -> tuple[float, float]:
         round(percentile(values, 0.50), 3),
         round(percentile(values, 0.95), 3),
     )
+
+
+def asserts_unsupported_claim(reply: str, claim: str) -> bool:
+    """Detect an asserted claim without treating an explicit denial as an assertion."""
+
+    reply_lower = reply.lower()
+    claim_lower = claim.lower()
+    start = 0
+    while (position := reply_lower.find(claim_lower, start)) >= 0:
+        sentence_start = max(
+            reply_lower.rfind(marker, 0, position)
+            for marker in (".", "!", "?", "\n")
+        )
+        sentence_end_positions = [
+            index
+            for marker in (".", "!", "?", "\n")
+            if (index := reply_lower.find(marker, position + len(claim_lower)))
+            >= 0
+        ]
+        sentence_end = (
+            min(sentence_end_positions)
+            if sentence_end_positions
+            else len(reply_lower)
+        )
+        sentence = reply_lower[sentence_start + 1 : sentence_end]
+        prefix = sentence[: sentence.find(claim_lower)]
+        epistemic_negation = re.search(
+            r"(?:not|no) evidence (?:of|that)|"
+            r"does not (?:confirm|establish|prove|show)|"
+            r"cannot (?:confirm|establish|determine)|"
+            r"not recorded|unverified|no confirmed",
+            prefix,
+        )
+        if epistemic_negation is None:
+            return True
+        start = position + len(claim_lower)
+    return False
 
 
 def _timed_call(
@@ -99,10 +139,73 @@ def _chat_outcome(
         tool_latencies.append(debug.latency_ms)
     selected_ids = debug.selected_document_ids if debug else []
     returned_sources = {citation.source_id for citation in response.citations}
+    claim_citation_relevance = all(
+        citation.citation_label in response.reply
+        and citation_supports_claim(response.reply, citation)
+        for citation in response.citations
+    )
     expected_sources = set(example.get("expected_source_ids", []))
+    expected_facts = example.get("expected_facts", [])
+    unsupported_claims = example.get("unsupported_claims", [])
+    reply_lower = response.reply.lower()
+    expected_facts_correct = all(
+        fact in response.reply for fact in expected_facts
+    )
+    unsupported_claims_avoided = all(
+        not asserts_unsupported_claim(response.reply, claim)
+        for claim in unsupported_claims
+    )
+    required_evidence = example.get("required_evidence", {})
+    required_sources = set(required_evidence.get("source_ids", []))
+    required_documents = set(required_evidence.get("document_ids", []))
+    required_evidence_present = (
+        required_sources.issubset(returned_sources)
+        and required_documents.issubset(set(selected_ids))
+    )
+    quality_expectations = example.get("answer_quality_checks", {})
+    quality_results: dict[str, bool] = {}
+    if quality_expectations.get("must_answer_directly"):
+        quality_results["must_answer_directly"] = response.reply.lstrip().startswith(
+            "**Answer**"
+        )
+    if quality_expectations.get("must_state_uncertainty"):
+        quality_results["must_state_uncertainty"] = any(
+            marker in reply_lower
+            for marker in (
+                "does not confirm",
+                "not recorded",
+                "not establish",
+                "not available",
+                "unknown",
+                "unconfirmed",
+                "insufficient",
+            )
+        )
+    if quality_expectations.get("must_state_confirmed_completion"):
+        quality_results["must_state_confirmed_completion"] = any(
+            marker in reply_lower
+            for marker in ("completed", "confirmed", "marked resolved")
+        )
+    if quality_expectations.get("must_use_citations"):
+        quality_results["must_use_citations"] = bool(response.citations) and all(
+            citation.citation_label in response.reply
+            for citation in response.citations
+        )
+    if quality_expectations.get("must_return_no_citations"):
+        quality_results["must_return_no_citations"] = not response.citations
+    if quality_expectations.get("must_avoid_unsupported_claims"):
+        quality_results["must_avoid_unsupported_claims"] = (
+            unsupported_claims_avoided
+        )
+    answer_quality_correct = all(quality_results.values())
     grounded = (
         all(text in response.reply for text in example.get("expected_contains", []))
+        and expected_facts_correct
+        and unsupported_claims_avoided
         and expected_sources.issubset(returned_sources)
+        and required_evidence_present
+        and answer_quality_correct
+        and claim_citation_relevance
         and (
             not example.get("expect_no_citations")
             or not response.citations
@@ -114,12 +217,19 @@ def _chat_outcome(
         and grounded
     )
     authorization_safe: bool | None = None
-    if example["category"] == "unauthorized_access":
+    authorization_expectation = example.get("authorization_expectation")
+    if (
+        example["category"] == "unauthorized_access"
+        or authorization_expectation == "denied"
+    ):
         authorization_safe = (
             not response.citations
             and not selected_ids
             and "not authorized" in response.reply.lower()
         )
+        task_success = task_success and authorization_safe
+    elif authorization_expectation == "allowed":
+        authorization_safe = "not authorized" not in response.reply.lower()
         task_success = task_success and authorization_safe
     policy_correct: bool | None = None
     if example["category"] == "policy_applicability":
@@ -134,6 +244,12 @@ def _chat_outcome(
         "selected_document_ids": list(selected_ids),
         "returned_source_ids": sorted(returned_sources),
         "grounded_answer_correct": grounded,
+        "expected_facts_correct": expected_facts_correct,
+        "unsupported_claims_avoided": unsupported_claims_avoided,
+        "required_evidence_present": required_evidence_present,
+        "answer_quality_correct": answer_quality_correct,
+        "claim_citation_relevance": claim_citation_relevance,
+        "answer_quality_checks": quality_results,
         "policy_correct": policy_correct,
         "authorization_safe": authorization_safe,
         "action_safe": None,
@@ -491,6 +607,14 @@ def evaluate_modes(
                 "Deterministic fallback results are never labeled as LLM results."
             ),
         },
+        "history_evaluation": {
+            "backend": "mock",
+            "network_access": False,
+            "note": (
+                "Repeatable golden evaluation never queries configured external "
+                "history. Snowflake is covered by opt-in integration tests."
+            ),
+        },
         "business_outcomes": {
             "measured": [],
             "not_measured": ["CSAT", "CPRR", "production ROI", "case deflection"],
@@ -499,12 +623,16 @@ def evaluate_modes(
         "metric_definitions": {
             "task_success_rate": "Fraction of scenario runs satisfying all declared expected outcomes.",
             "grounded_answer_accuracy": "Verifiable expected text and source citations for chat scenarios.",
+            "answer_quality_accuracy": "Declared directness, uncertainty, completion, citation, and claim-safety checks for chat scenarios.",
+            "claim_citation_relevance": "Fraction of chat runs whose inline claims have substantive, non-contradictory support from their cited source snippets.",
+            "unsupported_claim_avoidance": "Fraction of chat runs that omit every scenario-declared unsupported claim.",
+            "required_evidence_accuracy": "Fraction of chat runs returning every scenario-declared source and document requirement.",
             "action_safety_rate": "Controlled mutations obey confirmation, idempotency, staleness, and authorization expectations.",
             "latency": "Warm in-process timing; excludes model download and dashboard rendering.",
         },
         "modes": {},
     }
-    fixed_now = datetime(2026, 11, 8, 12, tzinfo=timezone.utc)
+    fixed_now = settings.evaluation_clock_utc
     with tempfile.TemporaryDirectory(prefix="service-agent-eval-") as temp_dir:
         for mode in modes:
             retriever = HybridRetrievalService(
@@ -512,6 +640,7 @@ def evaluate_modes(
                 embedding_provider=shared_provider,
                 embedding_model=settings.retrieval_model,
                 embedding_cache_dir=settings.retrieval_cache_dir,
+                top_k=settings.retrieval_top_k,
                 rrf_k=settings.retrieval_rrf_k,
                 semantic_min_score=settings.retrieval_semantic_min_score,
                 semantic_min_top_score=settings.retrieval_semantic_min_top_score,
@@ -524,13 +653,21 @@ def evaluate_modes(
                 except EmbeddingUnavailableError as exc:
                     index_error = str(exc)
 
-            database = Database(Path(temp_dir) / f"evaluation-{mode}.db")
+            database = Database(
+                Path(temp_dir) / f"evaluation-{mode}.db",
+                timeout_seconds=settings.sqlite_timeout_seconds,
+                busy_timeout_ms=settings.sqlite_busy_timeout_ms,
+            )
             database.initialize()
             task_results: list[bool] = []
             recalls: list[float] = []
             precisions: list[float] = []
             sufficiency_matches: list[bool] = []
             grounded_matches: list[bool] = []
+            answer_quality_matches: list[bool] = []
+            claim_citation_matches: list[bool] = []
+            unsupported_claim_matches: list[bool] = []
+            required_evidence_matches: list[bool] = []
             policy_matches: list[bool] = []
             authorization_matches: list[bool] = []
             action_matches: list[bool] = []
@@ -557,10 +694,11 @@ def evaluate_modes(
                     chat_service = ChatService(
                         database,
                         settings=settings,
-                        as_of=date(2026, 11, 7),
+                        as_of=settings.evaluation_as_of_date,
                         answer_generator=generator,
                         retriever=retriever,
                         sla_service=sla_service,
+                        history_adapter=MockHistoryAdapter(),
                     )
                     scenario_type = example.get("scenario_type", "chat")
                     if scenario_type == "chat":
@@ -612,6 +750,16 @@ def evaluate_modes(
                         ] += 1
                     for key, collection in (
                         ("grounded_answer_correct", grounded_matches),
+                        ("answer_quality_correct", answer_quality_matches),
+                        ("claim_citation_relevance", claim_citation_matches),
+                        (
+                            "unsupported_claims_avoided",
+                            unsupported_claim_matches,
+                        ),
+                        (
+                            "required_evidence_present",
+                            required_evidence_matches,
+                        ),
                         ("policy_correct", policy_matches),
                         ("authorization_safe", authorization_matches),
                         ("action_safe", action_matches),
@@ -663,6 +811,18 @@ def evaluate_modes(
                         "grounded_answer_correct": first[
                             "grounded_answer_correct"
                         ],
+                        "answer_quality_correct": first.get(
+                            "answer_quality_correct"
+                        ),
+                        "claim_citation_relevance": first.get(
+                            "claim_citation_relevance"
+                        ),
+                        "unsupported_claims_avoided": first.get(
+                            "unsupported_claims_avoided"
+                        ),
+                        "required_evidence_present": first.get(
+                            "required_evidence_present"
+                        ),
                         "fallback_reason": first["fallback_reason"],
                         "end_to_end_latency_p50_ms": round(
                             percentile(
@@ -690,6 +850,14 @@ def evaluate_modes(
                 "precision_at_3": _mean(precisions),
                 "evidence_sufficiency_accuracy": _mean(sufficiency_matches),
                 "grounded_answer_accuracy": _mean(grounded_matches),
+                "answer_quality_accuracy": _mean(answer_quality_matches),
+                "claim_citation_relevance": _mean(claim_citation_matches),
+                "unsupported_claim_avoidance": _mean(
+                    unsupported_claim_matches
+                ),
+                "required_evidence_accuracy": _mean(
+                    required_evidence_matches
+                ),
                 "policy_applicability_accuracy": _mean(policy_matches),
                 "authorization_safety_rate": _mean(authorization_matches),
                 "action_safety_rate": _mean(action_matches),
@@ -743,37 +911,45 @@ def print_summary(report: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    settings = Settings.from_environment()
     parser = argparse.ArgumentParser(
         description="Run deterministic or explicitly configured end-to-end evaluations."
     )
     parser.add_argument(
         "--dataset",
         type=Path,
-        default=Path("evaluations/golden_questions.json"),
+        default=settings.evaluation_dataset_path,
     )
     parser.add_argument(
         "--modes",
         nargs="+",
         choices=["lexical", "semantic", "hybrid"],
-        default=["lexical", "semantic", "hybrid"],
+        default=list(settings.evaluation_modes),
     )
-    parser.add_argument("--runs", type=int, default=3)
-    parser.add_argument("--output", type=Path)
+    parser.add_argument("--runs", type=int, default=settings.evaluation_runs)
+    parser.add_argument(
+        "--output", type=Path, default=settings.evaluation_results_path
+    )
     parser.add_argument(
         "--use-configured-llm",
-        action="store_true",
+        action=argparse.BooleanOptionalAction,
+        default=settings.evaluation_use_configured_llm,
         help=(
             "Use the environment-configured LLM when credentials exist. "
             "Otherwise the report explicitly records deterministic fallback."
         ),
     )
     args = parser.parse_args()
-    configure_logging("WARNING")
+    configure_logging(
+        settings.evaluation_log_level,
+        json_logs=settings.log_json,
+        trace_enabled=settings.trace_enabled,
+    )
     report = evaluate_modes(
         dataset_path=args.dataset,
         modes=args.modes,
         runs=args.runs,
-        settings=Settings.from_environment(),
+        settings=settings,
         use_configured_llm=args.use_configured_llm,
     )
     print_summary(report)

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from servicing_agent.evaluation import evaluate_modes
+from servicing_agent.evaluation import asserts_unsupported_claim, evaluate_modes
 from servicing_agent.settings import Settings
 
 
@@ -29,6 +30,19 @@ def dataset_path() -> Path:
     return Path(__file__).parents[1] / "evaluations" / "golden_questions.json"
 
 
+def test_unsupported_claim_check_respects_epistemic_negation() -> None:
+    claim = "the customer declined"
+
+    assert not asserts_unsupported_claim(
+        "The missing record is not evidence that the customer declined the request.",
+        claim,
+    )
+    assert asserts_unsupported_claim(
+        "The available case note says the customer declined the request.",
+        claim,
+    )
+
+
 def test_end_to_end_evaluation_covers_actions_sla_and_recovery(
     tmp_path, monkeypatch
 ) -> None:
@@ -42,19 +56,34 @@ def test_end_to_end_evaluation_covers_actions_sla_and_recovery(
         embedding_provider=ScenarioEmbeddingProvider(),
     )
 
+    expected_count = len(
+        json.loads(dataset_path().read_text(encoding="utf-8"))
+    )
     assert report["schema_version"] == 2
-    assert report["scenario_count"] == 18
+    assert report["scenario_count"] == expected_count
+    assert report["history_evaluation"] == {
+        "backend": "mock",
+        "network_access": False,
+        "note": (
+            "Repeatable golden evaluation never queries configured external "
+            "history. Snowflake is covered by opt-in integration tests."
+        ),
+    }
     assert report["generation_evaluation"]["declared_effective"] == "deterministic"
     assert report["business_outcomes"]["measured"] == []
     assert "CSAT" in report["business_outcomes"]["not_measured"]
     for metrics in report["modes"].values():
-        assert metrics["scenario_run_count"] == 18
+        assert metrics["scenario_run_count"] == expected_count
         assert metrics["action_safety_rate"] == 1.0
         assert metrics["escalation_correctness"] == 1.0
         assert metrics["recovery_success_rate"] == 1.0
         assert metrics["authorization_safety_rate"] == 1.0
         assert metrics["tool_observation_count"] > 0
-        assert metrics["end_to_end_observation_count"] == 18
+        assert metrics["end_to_end_observation_count"] == expected_count
+        assert 0.0 <= metrics["answer_quality_accuracy"] <= 1.0
+        assert 0.0 <= metrics["claim_citation_relevance"] <= 1.0
+        assert 0.0 <= metrics["unsupported_claim_avoidance"] <= 1.0
+        assert 0.0 <= metrics["required_evidence_accuracy"] <= 1.0
         scenario_types = {item["scenario_type"] for item in metrics["examples"]}
         assert scenario_types == {"chat", "controlled_note", "handoff", "sla"}
 

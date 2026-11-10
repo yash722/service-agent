@@ -18,8 +18,13 @@ def main() -> int:
         help="Optional SQLite path; defaults to SERVICE_AGENT_DB_PATH.",
     )
     args = parser.parse_args()
-    path = args.database or Settings.from_environment().database_path
-    result = Database(path).reset_demo_data()
+    settings = Settings.from_environment()
+    path = args.database or settings.database_path
+    result = Database(
+        path,
+        timeout_seconds=settings.sqlite_timeout_seconds,
+        busy_timeout_ms=settings.sqlite_busy_timeout_ms,
+    ).reset_demo_data()
     print(
         json.dumps(
             {

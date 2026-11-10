@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-import os
-from pathlib import Path
-
 import httpx
 import streamlit as st
 
 from servicing_agent.demo_scenarios import DEMO_SCENARIOS, scenario_by_label
 from servicing_agent.evaluation_dashboard import render_evaluation_dashboard
+from servicing_agent.settings import Settings
 
 
-API_URL = os.getenv("SERVICE_AGENT_API_URL", "http://127.0.0.1:8000")
-EVALUATION_RESULTS_PATH = Path(
-    os.getenv("EVALUATION_RESULTS_PATH", "evaluations/latest_results.json")
+SETTINGS = Settings.from_environment()
+API_URL = SETTINGS.api_url
+EVALUATION_RESULTS_PATH = SETTINGS.evaluation_results_path
+API_TIMEOUT = httpx.Timeout(
+    connect=SETTINGS.api_request_timeout_seconds,
+    read=SETTINGS.ui_api_read_timeout_seconds,
+    write=SETTINGS.api_request_timeout_seconds,
+    pool=SETTINGS.api_request_timeout_seconds,
 )
 DEMO_IDENTITIES = {
     "Alex Morgan · CUST-1001, CUST-1002": "demo-agent-alex",
@@ -20,9 +23,9 @@ DEMO_IDENTITIES = {
 }
 
 st.set_page_config(
-    page_title="FDE Servicing Agent Demo",
-    page_icon="⚡",
-    layout="wide",
+    page_title=SETTINGS.ui_page_title,
+    page_icon=SETTINGS.ui_page_icon,
+    layout=SETTINGS.ui_layout,
 )
 st.title("Salesforce FDE Servicing Agent PoC")
 st.caption(
@@ -42,7 +45,7 @@ st.sidebar.warning(
 )
 with st.sidebar.expander("Reset before a live demo"):
     st.code(
-        "python -m servicing_agent.demo_reset --database data\\service_agent.db",
+        "python -m servicing_agent.demo_reset",
         language="powershell",
     )
 
@@ -71,10 +74,13 @@ def call_api(
             f"{API_URL}{path}",
             headers={"X-Demo-User": user_id or demo_user},
             json=payload,
-            timeout=20.0,
+            timeout=API_TIMEOUT,
         )
         response.raise_for_status()
-        return response.json()
+        response_payload = response.json()
+        if not isinstance(response_payload, dict):
+            raise ValueError("The API response was not a JSON object.")
+        return response_payload
     except httpx.HTTPStatusError:
         try:
             error_payload = response.json().get("detail")
@@ -84,10 +90,36 @@ def call_api(
         if isinstance(error_payload, dict) and error_payload.get("operation_id"):
             return error_payload
         return None
-    except (httpx.HTTPError, ValueError) as exc:
+    except httpx.ReadTimeout:
         st.error(
-            "The local API is unavailable or returned invalid data. Start Uvicorn "
-            f"at {API_URL}, then retry. ({type(exc).__name__})"
+            "The API is still processing or exceeded the configured Streamlit "
+            f"read timeout of {SETTINGS.ui_api_read_timeout_seconds:g} seconds. "
+            "The backend may still finish; inspect its stage-latency logs before "
+            "retrying."
+        )
+        return None
+    except (httpx.ConnectError, httpx.ConnectTimeout):
+        st.error(
+            f"Streamlit could not connect to the local API at {API_URL}. Start "
+            "FastAPI and confirm SERVICE_AGENT_API_URL."
+        )
+        return None
+    except httpx.TimeoutException as exc:
+        st.error(
+            "The local API request timed out outside response reading "
+            f"({type(exc).__name__}). Check the API process and retry."
+        )
+        return None
+    except httpx.RequestError as exc:
+        st.error(
+            "The local API connection failed while sending or receiving data "
+            f"({type(exc).__name__})."
+        )
+        return None
+    except (ValueError, TypeError, KeyError) as exc:
+        st.error(
+            "The local API returned an invalid JSON response. Inspect FastAPI "
+            f"logs and response schema. ({type(exc).__name__})"
         )
         return None
 
@@ -106,6 +138,8 @@ def assistant_message(result: dict) -> dict:
             "trace": result.get("trace", result["steps"]),
             "retrieval": result.get("retrieval_debug"),
             "history": result.get("history_debug"),
+            "generation": result.get("generation_debug"),
+            "total_latency_ms": result.get("total_latency_ms"),
             "sla": result.get("sla"),
         },
     }
@@ -125,6 +159,47 @@ def submit_chat(prompt: str, user_id: str) -> bool:
 def render_message(message: dict) -> None:
     st.markdown(message["content"])
     citations = message.get("citations", [])
+    details = message.get("details")
+    if details:
+        mode_labels = {
+            "llm": "Configured LLM",
+            "deterministic": "Deterministic evidence fallback",
+            "not_applicable": "Deterministic fast path",
+        }
+        st.caption(
+            f"Generation mode: {mode_labels.get(details['generation_mode'], details['generation_mode'])} "
+            f"· Evidence status: {details['evidence_status']}"
+        )
+        if citations:
+            st.caption(
+                "Evidence sources: "
+                + ", ".join(citation["source_id"] for citation in citations)
+            )
+        timing_parts = []
+        if details.get("history"):
+            timing_parts.append(
+                f"Snowflake/history {details['history']['latency_ms']:.0f} ms"
+            )
+        if details.get("retrieval"):
+            timing_parts.append(
+                f"retrieval {details['retrieval']['latency_ms']:.0f} ms"
+            )
+        if details.get("generation"):
+            timing_parts.append(
+                f"generation {details['generation']['latency_ms']:.0f} ms"
+            )
+        if details.get("total_latency_ms") is not None:
+            timing_parts.append(
+                f"total {details['total_latency_ms']:.0f} ms"
+            )
+        if timing_parts:
+            st.caption("Stage latency: " + " · ".join(timing_parts))
+        generation_details = details.get("generation") or {}
+        if generation_details.get("fallback_reason"):
+            st.info(
+                "A grounded deterministic fallback was used. The technical "
+                "validation reason remains available in the diagnostics below."
+            )
     if citations:
         with st.expander(f"Evidence citations · {len(citations)}", expanded=True):
             for citation in citations:
@@ -137,14 +212,15 @@ def render_message(message: dict) -> None:
                 )
                 st.write(citation["snippet"])
     warnings = message.get("warnings", [])
-    if warnings:
-        st.warning(" ".join(warnings))
-    details = message.get("details")
+    fallback_reason = (
+        ((details or {}).get("generation") or {}).get("fallback_reason")
+    )
+    visible_warnings = [
+        warning for warning in warnings if warning != fallback_reason
+    ]
+    if visible_warnings:
+        st.warning(" ".join(visible_warnings))
     if details:
-        st.caption(
-            f"Intent: {details['intent']} · Generation: "
-            f"{details['generation_mode']} · Evidence: {details['evidence_status']}"
-        )
         with st.expander("Execution trace and retrieval diagnostics"):
             st.json(details)
 
@@ -352,4 +428,9 @@ with actions_tab:
         render_handoff_and_sla()
 
 with evaluation_tab:
-    render_evaluation_dashboard(st, EVALUATION_RESULTS_PATH)
+    render_evaluation_dashboard(
+        st,
+        EVALUATION_RESULTS_PATH,
+        evaluation_modes=SETTINGS.evaluation_modes,
+        evaluation_runs=SETTINGS.evaluation_runs,
+    )

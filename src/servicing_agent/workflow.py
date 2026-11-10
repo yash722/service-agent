@@ -12,7 +12,7 @@ from .generation import GroundedAnswerGenerator
 from .history import HistoryError, HistoryResult
 from .logging_config import log_event
 from .retrieval import RetrievalResult
-from .schemas import HistoryDebug, RetrievalDebug, SourceCitation
+from .schemas import GenerationDebug, HistoryDebug, RetrievalDebug, SourceCitation
 from .tools import (
     CRMAuthorizationError,
     EntitlementTool,
@@ -43,6 +43,7 @@ class WorkflowState(TypedDict, total=False):
     warnings: list[str]
     retrieval_debug: RetrievalDebug | None
     history_debug: HistoryDebug | None
+    generation_debug: GenerationDebug | None
     steps: Annotated[list[str], operator.add]
     trace: Annotated[list[str], operator.add]
 
@@ -218,6 +219,9 @@ def build_complex_workflow(
                 "trace": ["generation.skipped:unauthorized"],
                 "retrieval_debug": None,
                 "history_debug": None,
+                "generation_debug": GenerationDebug(
+                    mode="deterministic", latency_ms=0.0
+                ),
             }
         elif state.get("error") == "not_found":
             result = {
@@ -229,6 +233,9 @@ def build_complex_workflow(
                 "trace": ["generation.skipped:case_not_found"],
                 "retrieval_debug": None,
                 "history_debug": None,
+                "generation_debug": GenerationDebug(
+                    mode="deterministic", latency_ms=0.0
+                ),
             }
         else:
             generated = answer_generator.generate(
@@ -249,13 +256,31 @@ def build_complex_workflow(
                     else "insufficient"
                 )
             )
+            log_event(
+                logger,
+                "workflow.generation_completed",
+                execution_id=state["execution_id"],
+                mode=generated.mode,
+                latency_ms=generated.latency_ms,
+                fallback_reason=generated.fallback_reason,
+                finish_reason=generated.finish_reason,
+                output_tokens=generated.output_tokens,
+            )
             result = {
                 "reply": generated.reply,
                 "citations": list(generated.citations),
                 "generation_mode": generated.mode,
                 "evidence_status": combined_evidence_status,
                 "warnings": list(generated.warnings),
-                "trace": [f"generation.{generated.mode}:citation_validated"],
+                "trace": [
+                    f"generation.{generated.mode}:citation_validated:"
+                    f"{generated.latency_ms:.3f}ms",
+                    *(
+                        [f"generation.fallback:{generated.fallback_reason}"]
+                        if generated.fallback_reason
+                        else []
+                    ),
+                ],
                 "retrieval_debug": RetrievalDebug(
                     requested_mode=diagnostics.requested_mode,
                     effective_mode=diagnostics.effective_mode,
@@ -280,6 +305,13 @@ def build_complex_workflow(
                     freshness_at=history.freshness_at,
                     fallback_used=history.fallback_used,
                     failure_category=history.failure_category,
+                ),
+                "generation_debug": GenerationDebug(
+                    mode=generated.mode,
+                    latency_ms=generated.latency_ms,
+                    fallback_reason=generated.fallback_reason,
+                    finish_reason=generated.finish_reason,
+                    output_tokens=generated.output_tokens,
                 ),
             }
         return {**result, "steps": ["workflow:compose_response"]}

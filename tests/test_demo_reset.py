@@ -48,6 +48,13 @@ def test_demo_reset_restores_canonical_state_and_is_repeatable(tmp_path) -> None
     assert ticket["owner"] == "Tier 2 Support"
     assert ticket["record_version"] == 1
     assert ticket["sla_deadline"] == "2026-11-06T21:30:00Z"
+    resolved = database.fetch_ticket("CASE-4825")
+    assert resolved is not None
+    assert resolved["customer_id"] == "CUST-1001"
+    assert resolved["status"] == "Resolved"
+    assert resolved["updated_at"] == "2026-11-01T12:40:00Z"
+    assert first["tickets"] == 5
+    assert second["tickets"] == 5
     assert database.fetch_ticket_notes("CASE-4821") == []
     assert database.fetch_handoffs("CASE-4821") == []
 
