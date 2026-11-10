@@ -46,7 +46,7 @@ credentials or private keys are stored in this repository.
 - Measured lexical/semantic/hybrid quality and latency dashboard
 - Seven reproducible read scenarios plus controlled-action/SLA demonstrations
 - Atomic synthetic demo-data reset
-- 118 passing offline pytest tests plus five opt-in integration tests
+- 128 passing offline pytest tests plus five opt-in integration tests
 
 ## Architecture overview
 
@@ -127,8 +127,9 @@ Important files:
 │   ├── benchmark_results.json
 │   ├── golden_questions.json
 │   ├── latest_results.json
-│   ├── qwen3_4b_baseline_live.json
-│   └── qwen3_4b_instruct_live.json
+│   └── live_ollama/
+│       ├── latest.json
+│       └── live_ollama_<timestamp>.json
 ├── src/servicing_agent/
 │   ├── corpus/knowledge.json
 │   ├── actions.py
@@ -518,39 +519,57 @@ The combined live test requires both investigation questions to return
 asserts a normal `stop` finish reason, a bounded nonzero output-token count,
 authorized Snowflake history, effective hybrid retrieval, and inline citations.
 
-To repeat the matched three-run benchmark (one excluded warm-up, then each
-question three times), keep Snowflake and hybrid retrieval enabled in `.env` and
-run:
+To run the dashboard's separate **Live Ollama Evaluation**, keep Snowflake,
+hybrid retrieval, and `qwen3:4b-instruct` enabled in `.env`, then run:
 
 ```powershell
-python -m servicing_agent.benchmark_ollama --runs 3 `
-  --output evaluations\qwen3_4b_instruct_live.json
-
-# Optional comparison, if the old model is still installed locally:
-python -m servicing_agent.benchmark_ollama --runs 3 --model qwen3:4b `
-  --output evaluations\qwen3_4b_baseline_live.json
+python -m servicing_agent.benchmark_ollama --runs 5
 ```
 
-The JSON artifacts contain aggregate diagnostics only: generation and total
-latency, finish reason, output-token count, citation/relevance checks, fallback
-state/reason, cited source IDs, and authorized history record count. They do not
-store generated answer text, source snippets, credentials, or private-key data.
-Measured on the local Windows CPU demo environment on 2026-11-08, with a
-512-token limit:
+The command performs one excluded warm-up and then five measured runs for demo
+scenarios 2–6, for 25 recorded responses. It writes both a timestamped artifact
+and `evaluations\live_ollama\latest.json`. The dashboard reads `latest.json`
+dynamically and never starts Snowflake or Ollama itself.
 
-| Model / question | Mean generation | Mean total | Finish reasons | Mean output tokens | Citation valid | Relevant | Fallback |
-|---|---:|---:|---|---:|---:|---:|---:|
-| `qwen3:4b` / still investigating | 113.83 s | 117.69 s | `length` 3/3 | 512 | 3/3 | 3/3 | 3/3 |
-| `qwen3:4b-instruct` / still investigating | 25.47 s | 28.52 s | `stop` 3/3 | 208 | 3/3 | 3/3 | 0/3 |
-| `qwen3:4b` / escalation reason | 97.45 s | 101.27 s | `length` 3/3 | 512 | 3/3 | 3/3 | 3/3 |
-| `qwen3:4b-instruct` / escalation reason | 19.32 s | 22.75 s | `stop` 3/3 | 152 | 3/3 | 3/3 | 0/3 |
+Before paying for or waiting on another live run, re-score an existing artifact
+locally after an evaluation-method change:
 
-These are local measurements, not production claims. The benchmark's citation
-validity metric checks that every returned citation label appears inline;
-`generation_mode=llm` additionally proves the existing substantive citation and
-answer-quality validators accepted the model response. Relevance is the
-benchmark's question-specific deterministic check. Since every instruct response
-completed normally well below 512 tokens, the configured limit was not increased.
+```powershell
+python -m servicing_agent.benchmark_ollama `
+  --reevaluate evaluations\live_ollama\latest.json
+```
+
+This command makes no Snowflake or Ollama calls. It preserves the original run
+text, evidence IDs, latency, and legacy exact-contract result, writes a new
+timestamped artifact, and updates `latest.json` with the revised scores and an
+auditable before/after analysis.
+
+Artifacts record individual synthetic answers, cited source IDs, selected
+documents, generation/fallback state, finish reason, output tokens, golden-contract
+checks, and stage latency. They never contain Snowflake credentials, private keys,
+or passphrases. Citation validity means the existing application validator
+accepted LLM mode and labels appeared inline; it is not a substitute for factual
+correctness or human review. Human-reviewed answer quality remains **Not
+measured** until a reviewer explicitly adds a separate assessment.
+
+Live answer quality is reported as five distinct deterministic measurements:
+
+- **Semantic answer correctness** checks the requested meaning, polarity,
+  uncertainty/completion state, intent, evidence status, and unsupported
+  certainty.
+- **Factual completeness** checks semantic coverage of every material golden
+  statement and fact, including omissions and negations.
+- **Claim grounding** checks required evidence selection, claim-to-citation
+  relevance, and unsupported-claim avoidance.
+- **Citation validity** records whether the application accepted LLM mode and
+  returned inline source labels. It does not prove factual correctness.
+- **Formatting compliance** rejects planning/reasoning text, unfinished output,
+  and malformed citation brackets. Natural LLM answers do not need the
+  deterministic generator's `**Answer**` heading.
+
+The dashboard retains **Legacy exact contract** as a separate compatibility
+metric. The deterministic 24-scenario evaluator and its exact golden contracts
+are unchanged.
 
 The standard evaluation command always uses the deterministic generator. To run
 a genuine configured-LLM evaluation, explicitly add `--use-configured-llm`. The
@@ -715,7 +734,7 @@ unit tests use mocked embeddings and do not download the model. Response-quality
 regressions cover intent-aware answers, reasoning/partial-output rejection,
 unsupported promises and root causes, claim-level citation relevance, evidence
 polarity, planned-versus-completed actions, and historical event-time accuracy.
-The full suite collects 123 tests: 118 pass offline and the five network tests
+The full suite collects 133 tests: 128 pass offline and the five network tests
 are skipped unless explicitly enabled.
 
 The real Snowflake test is opt-in and runs the query through FastAPI and the

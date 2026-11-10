@@ -8,7 +8,11 @@ from servicing_agent.evaluation_dashboard import (
     EvaluationReportError,
     comparison_rows,
     latency_rows,
+    live_evaluation_status,
+    live_scenario_detail_rows,
     load_evaluation_report,
+    load_live_ollama_report,
+    live_scenario_rows,
     scenario_rows,
 )
 
@@ -77,3 +81,147 @@ def test_dashboard_rejects_missing_or_old_report(tmp_path) -> None:
     old.write_text(json.dumps({"modes": {"lexical": {}}}), encoding="utf-8")
     with pytest.raises(EvaluationReportError, match="Milestone 4 schema"):
         load_evaluation_report(old)
+
+
+def test_dashboard_loads_live_ollama_report_without_running_integrations(
+    tmp_path,
+) -> None:
+    path = tmp_path / "latest.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 2,
+                "evaluation_type": "live_ollama",
+                "summary": {
+                    "overall": {},
+                    "scenarios": {
+                        "unknown_diagnostics": {
+                            "run_count": 5,
+                            "llm_success_rate": 1.0,
+                            "fallback_rate": 0.0,
+                            "citation_validity_rate": 1.0,
+                            "citation_relevance_rate": 1.0,
+                            "semantic_answer_correctness_rate": 1.0,
+                            "factual_completeness_rate": 0.8,
+                            "claim_grounding_rate": 1.0,
+                            "formatting_compliance_rate": 1.0,
+                            "legacy_exact_contract_rate": 0.0,
+                            "generation_latency": {
+                                "p50_ms": 10.0,
+                                "p95_ms": 20.0,
+                            },
+                            "total_latency": {
+                                "p50_ms": 30.0,
+                                "p95_ms": 40.0,
+                            },
+                            "finish_reasons": {"stop": 5},
+                            "fallback_reasons": {},
+                            "failures": [],
+                        }
+                    },
+                },
+                "runs": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = load_live_ollama_report(path)
+    row = live_scenario_rows(report)[0]
+    detail = live_scenario_detail_rows(report)[0]
+
+    assert row["Scenario"] == "Unknown Diagnostics"
+    assert row["LLM success"] == "100.0%"
+    assert row["Fallback rate"] == "0.0%"
+    assert row["Semantic correctness"] == "100.0%"
+    assert row["Factual completeness"] == "80.0%"
+    assert row["Claim grounding"] == "100.0%"
+    assert row["Generation P95 (s)"] == "0.02"
+    assert row["Total P95 (s)"] == "0.04"
+    assert detail["Citation validity"] == "100.0%"
+    assert detail["Formatting compliance"] == "100.0%"
+    assert detail["Legacy exact contract"] == "0.0%"
+
+
+def test_live_scenario_names_are_readable() -> None:
+    metrics = {
+        "run_count": 5,
+        "llm_success_rate": 1.0,
+        "fallback_rate": 0.0,
+        "semantic_answer_correctness_rate": 1.0,
+        "factual_completeness_rate": 1.0,
+        "claim_grounding_rate": 1.0,
+        "generation_latency": {"p50_ms": 1000.0, "p95_ms": 2000.0},
+        "total_latency": {"p50_ms": 3000.0, "p95_ms": 4000.0},
+    }
+    report = {
+        "summary": {
+            "scenarios": {
+                key: metrics
+                for key in (
+                    "multi_source",
+                    "premium_policy",
+                    "standard_policy",
+                    "unknown_diagnostics",
+                    "resolved_incident",
+                )
+            }
+        }
+    }
+
+    assert [row["Scenario"] for row in live_scenario_rows(report)] == [
+        "Multi-source Investigation",
+        "Premium Policy",
+        "Standard Policy",
+        "Unknown Diagnostics",
+        "Confirmed Resolution",
+    ]
+
+
+def test_live_success_message_requires_measured_zero_fallbacks_and_failures() -> None:
+    success = {
+        "summary": {
+            "overall": {
+                "run_count": 25,
+                "fallback_rate": 0.0,
+                "failure_count": 0,
+            }
+        }
+    }
+    fallback = {
+        "summary": {
+            "overall": {
+                "run_count": 25,
+                "fallback_rate": 0.04,
+                "failure_count": 0,
+            }
+        }
+    }
+    revised_failure = {
+        "summary": {
+            "overall": {
+                "run_count": 25,
+                "fallback_rate": 0.0,
+                "failure_count": 1,
+            }
+        }
+    }
+
+    assert live_evaluation_status(success) == (
+        "success",
+        "No fallbacks or failures under the revised live evaluation checks. "
+        "Legacy strict-contract mismatches are reported separately.",
+    )
+    assert live_evaluation_status(fallback)[0] == "warning"
+    assert live_evaluation_status(revised_failure)[0] == "warning"
+    assert live_evaluation_status({"summary": {"overall": {}}})[0] == "warning"
+
+
+def test_dashboard_rejects_missing_or_invalid_live_report(tmp_path) -> None:
+    with pytest.raises(EvaluationReportError, match="No live Ollama"):
+        load_live_ollama_report(tmp_path / "missing.json")
+
+    invalid = tmp_path / "invalid.json"
+    invalid.write_text(json.dumps({"schema_version": 2}), encoding="utf-8")
+    with pytest.raises(EvaluationReportError, match="expected schema"):
+        load_live_ollama_report(invalid)

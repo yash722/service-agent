@@ -1,0 +1,1575 @@
+{
+  "cold_start": {
+    "cold_start_excess_ms": 67977.241,
+    "generation_latency_ms": 30782.841,
+    "retrieval_latency_ms": 45788.916,
+    "snowflake_latency_ms": 7591.683,
+    "total_latency_ms": 84180.704,
+    "warm_multi_source_total_p50_ms": 16203.463
+  },
+  "dataset_path": "C:\\Users\\yashr\\OneDrive\\Desktop\\CollegeStuff\\ServiceAgent\\evaluations\\golden_questions.json",
+  "dataset_sha256": "a7ee3702f1784dc91c1271e272ff7db1e10f3964e4335806bb7ab87c868ac6ee",
+  "evaluation_type": "live_ollama",
+  "generated_at_utc": "2026-11-10T16:18:57.377510Z",
+  "history_backend": "snowflake",
+  "human_review": {
+    "note": "No human answer-quality review was performed. Deterministic golden-contract checks are reported separately.",
+    "score": null,
+    "status": "not_measured"
+  },
+  "llm_timeout_seconds": 120.0,
+  "max_output_tokens": 512,
+  "measured_run_count": 25,
+  "metric_notes": {
+    "answer_correctness": "Exact existing golden contract: expected text/facts/evidence, unsupported-claim avoidance, and answer-quality checks.",
+    "citation_relevance": "Deterministic claim-to-source lexical relevance and polarity check.",
+    "citation_validity": "The application validator accepted LLM mode and every returned citation label appeared inline. This is not definitive factual correctness.",
+    "latency": "Measured warm requests only; the warm-up is separate."
+  },
+  "model": "qwen3:4b-instruct",
+  "provider": "openai_compatible",
+  "retrieval_mode": "hybrid",
+  "runs": [
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+      "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CALL-4821-20261105",
+        "CASE-NOTE-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 12437.101,
+      "generation_mode": "llm",
+      "golden_contract_id": "multi-source-case-investigation",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 101,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 27.009,
+      "retrieval_mode": "hybrid",
+      "run_number": 1,
+      "scenario_key": "multi_source",
+      "scenario_label": "2 \u00b7 Multi-source investigation",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3720.401,
+      "total_latency_ms": 16203.463,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+      "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CALL-4821-20261105",
+        "CASE-NOTE-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 12969.819,
+      "generation_mode": "llm",
+      "golden_contract_id": "multi-source-case-investigation",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 101,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.165,
+      "retrieval_mode": "hybrid",
+      "run_number": 2,
+      "scenario_key": "multi_source",
+      "scenario_label": "2 \u00b7 Multi-source investigation",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3282.126,
+      "total_latency_ms": 16277.832,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+      "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CALL-4821-20261105",
+        "CASE-NOTE-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 12578.488,
+      "generation_mode": "llm",
+      "golden_contract_id": "multi-source-case-investigation",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 101,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 22.082,
+      "retrieval_mode": "hybrid",
+      "run_number": 3,
+      "scenario_key": "multi_source",
+      "scenario_label": "2 \u00b7 Multi-source investigation",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3636.371,
+      "total_latency_ms": 16248.009,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+      "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CALL-4821-20261105",
+        "CASE-NOTE-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11751.214,
+      "generation_mode": "llm",
+      "golden_contract_id": "multi-source-case-investigation",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 101,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.108,
+      "retrieval_mode": "hybrid",
+      "run_number": 4,
+      "scenario_key": "multi_source",
+      "scenario_label": "2 \u00b7 Multi-source investigation",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 4152.205,
+      "total_latency_ms": 15931.607,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+      "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CALL-4821-20261105",
+        "CASE-NOTE-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11949.075,
+      "generation_mode": "llm",
+      "golden_contract_id": "multi-source-case-investigation",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 101,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.002,
+      "retrieval_mode": "hybrid",
+      "run_number": 5,
+      "scenario_key": "multi_source",
+      "scenario_label": "2 \u00b7 Multi-source investigation",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3601.363,
+      "total_latency_ms": 15575.301,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "8e9098a54bcc9488ebbacfa7a5560162342a6a792a16e8d24442180b6b8813ec",
+      "answer_text": "The initial response target for CASE-4821 is two clock hours [POL-TELEMETRY-RESPONSE v2.0]. This policy applies because the customer holds an active Premium entitlement for PRD-TELEMETRY as of 2026-01-01 [ENT-1001-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1001-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 12134.832,
+      "generation_mode": "llm",
+      "golden_contract_id": "premium-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 77,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 25.132,
+      "retrieval_mode": "hybrid",
+      "run_number": 1,
+      "scenario_key": "premium_policy",
+      "scenario_label": "3 \u00b7 Premium policy applicability",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3136.539,
+      "total_latency_ms": 15308.805,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "8e9098a54bcc9488ebbacfa7a5560162342a6a792a16e8d24442180b6b8813ec",
+      "answer_text": "The initial response target for CASE-4821 is two clock hours [POL-TELEMETRY-RESPONSE v2.0]. This policy applies because the customer holds an active Premium entitlement for PRD-TELEMETRY as of 2026-01-01 [ENT-1001-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1001-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 8905.042,
+      "generation_mode": "llm",
+      "golden_contract_id": "premium-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 77,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.269,
+      "retrieval_mode": "hybrid",
+      "run_number": 2,
+      "scenario_key": "premium_policy",
+      "scenario_label": "3 \u00b7 Premium policy applicability",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3305.359,
+      "total_latency_ms": 12235.814,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "8e9098a54bcc9488ebbacfa7a5560162342a6a792a16e8d24442180b6b8813ec",
+      "answer_text": "The initial response target for CASE-4821 is two clock hours [POL-TELEMETRY-RESPONSE v2.0]. This policy applies because the customer holds an active Premium entitlement for PRD-TELEMETRY as of 2026-01-01 [ENT-1001-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1001-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 8946.695,
+      "generation_mode": "llm",
+      "golden_contract_id": "premium-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 77,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.651,
+      "retrieval_mode": "hybrid",
+      "run_number": 3,
+      "scenario_key": "premium_policy",
+      "scenario_label": "3 \u00b7 Premium policy applicability",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3328.839,
+      "total_latency_ms": 12303.531,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "8e9098a54bcc9488ebbacfa7a5560162342a6a792a16e8d24442180b6b8813ec",
+      "answer_text": "The initial response target for CASE-4821 is two clock hours [POL-TELEMETRY-RESPONSE v2.0]. This policy applies because the customer holds an active Premium entitlement for PRD-TELEMETRY as of 2026-01-01 [ENT-1001-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1001-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 10314.647,
+      "generation_mode": "llm",
+      "golden_contract_id": "premium-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 77,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 19.414,
+      "retrieval_mode": "hybrid",
+      "run_number": 4,
+      "scenario_key": "premium_policy",
+      "scenario_label": "3 \u00b7 Premium policy applicability",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3475.551,
+      "total_latency_ms": 13835.265,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {},
+      "answer_quality_correct": true,
+      "answer_sha256": "8e9098a54bcc9488ebbacfa7a5560162342a6a792a16e8d24442180b6b8813ec",
+      "answer_text": "The initial response target for CASE-4821 is two clock hours [POL-TELEMETRY-RESPONSE v2.0]. This policy applies because the customer holds an active Premium entitlement for PRD-TELEMETRY as of 2026-01-01 [ENT-1001-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1001-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 8392.768,
+      "generation_mode": "llm",
+      "golden_contract_id": "premium-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 77,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 21.541,
+      "retrieval_mode": "hybrid",
+      "run_number": 5,
+      "scenario_key": "premium_policy",
+      "scenario_label": "3 \u00b7 Premium policy applicability",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3344.987,
+      "total_latency_ms": 11773.654,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {
+        "must_avoid_unsupported_claims": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": true,
+      "answer_sha256": "90e649f3d4c9f39c69baabf67c6b140979a8a30bac77872f74170600827af99c",
+      "answer_text": "The initial response target for CASE-4824 is eight business hours. This target applies under the Telemetry incident response policy for Standard tier subscriptions [POL-TELEMETRY-RESPONSE v1.0]. The policy is applicable because the customer holds an active Standard entitlement for PRD-TELEMETRY as of 2025-08-15 [ENT-1002-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1002-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 13884.506,
+      "generation_mode": "llm",
+      "golden_contract_id": "standard-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 93,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 25.362,
+      "retrieval_mode": "hybrid",
+      "run_number": 1,
+      "scenario_key": "standard_policy",
+      "scenario_label": "4 \u00b7 Standard policy applicability",
+      "selected_document_ids": [
+        "CASE-NOTE-4824-v1.0",
+        "POL-TELEMETRY-RESPONSE-v1.0"
+      ],
+      "snowflake_latency_ms": 4856.801,
+      "total_latency_ms": 18778.619,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {
+        "must_avoid_unsupported_claims": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": true,
+      "answer_sha256": "90e649f3d4c9f39c69baabf67c6b140979a8a30bac77872f74170600827af99c",
+      "answer_text": "The initial response target for CASE-4824 is eight business hours. This target applies under the Telemetry incident response policy for Standard tier subscriptions [POL-TELEMETRY-RESPONSE v1.0]. The policy is applicable because the customer holds an active Standard entitlement for PRD-TELEMETRY as of 2025-08-15 [ENT-1002-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1002-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 10080.998,
+      "generation_mode": "llm",
+      "golden_contract_id": "standard-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 93,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 17.763,
+      "retrieval_mode": "hybrid",
+      "run_number": 2,
+      "scenario_key": "standard_policy",
+      "scenario_label": "4 \u00b7 Standard policy applicability",
+      "selected_document_ids": [
+        "CASE-NOTE-4824-v1.0",
+        "POL-TELEMETRY-RESPONSE-v1.0"
+      ],
+      "snowflake_latency_ms": 3041.88,
+      "total_latency_ms": 13150.044,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {
+        "must_avoid_unsupported_claims": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": true,
+      "answer_sha256": "90e649f3d4c9f39c69baabf67c6b140979a8a30bac77872f74170600827af99c",
+      "answer_text": "The initial response target for CASE-4824 is eight business hours. This target applies under the Telemetry incident response policy for Standard tier subscriptions [POL-TELEMETRY-RESPONSE v1.0]. The policy is applicable because the customer holds an active Standard entitlement for PRD-TELEMETRY as of 2025-08-15 [ENT-1002-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1002-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11471.787,
+      "generation_mode": "llm",
+      "golden_contract_id": "standard-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 93,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 14.612,
+      "retrieval_mode": "hybrid",
+      "run_number": 3,
+      "scenario_key": "standard_policy",
+      "scenario_label": "4 \u00b7 Standard policy applicability",
+      "selected_document_ids": [
+        "CASE-NOTE-4824-v1.0",
+        "POL-TELEMETRY-RESPONSE-v1.0"
+      ],
+      "snowflake_latency_ms": 3533.064,
+      "total_latency_ms": 15028.854,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {
+        "must_avoid_unsupported_claims": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": true,
+      "answer_sha256": "90e649f3d4c9f39c69baabf67c6b140979a8a30bac77872f74170600827af99c",
+      "answer_text": "The initial response target for CASE-4824 is eight business hours. This target applies under the Telemetry incident response policy for Standard tier subscriptions [POL-TELEMETRY-RESPONSE v1.0]. The policy is applicable because the customer holds an active Standard entitlement for PRD-TELEMETRY as of 2025-08-15 [ENT-1002-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1002-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 10351.753,
+      "generation_mode": "llm",
+      "golden_contract_id": "standard-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 93,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 37.2,
+      "retrieval_mode": "hybrid",
+      "run_number": 4,
+      "scenario_key": "standard_policy",
+      "scenario_label": "4 \u00b7 Standard policy applicability",
+      "selected_document_ids": [
+        "CASE-NOTE-4824-v1.0",
+        "POL-TELEMETRY-RESPONSE-v1.0"
+      ],
+      "snowflake_latency_ms": 3287.114,
+      "total_latency_ms": 13688.058,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": true,
+      "answer_quality_checks": {
+        "must_avoid_unsupported_claims": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": true,
+      "answer_sha256": "90e649f3d4c9f39c69baabf67c6b140979a8a30bac77872f74170600827af99c",
+      "answer_text": "The initial response target for CASE-4824 is eight business hours. This target applies under the Telemetry incident response policy for Standard tier subscriptions [POL-TELEMETRY-RESPONSE v1.0]. The policy is applicable because the customer holds an active Standard entitlement for PRD-TELEMETRY as of 2025-08-15 [ENT-1002-TELEMETRY record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "ENT-1002-TELEMETRY",
+        "POL-TELEMETRY-RESPONSE"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11075.114,
+      "generation_mode": "llm",
+      "golden_contract_id": "standard-policy-applicability",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 93,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 14.566,
+      "retrieval_mode": "hybrid",
+      "run_number": 5,
+      "scenario_key": "standard_policy",
+      "scenario_label": "4 \u00b7 Standard policy applicability",
+      "selected_document_ids": [
+        "CASE-NOTE-4824-v1.0",
+        "POL-TELEMETRY-RESPONSE-v1.0"
+      ],
+      "snowflake_latency_ms": 3246.732,
+      "total_latency_ms": 14344.803,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_uncertainty": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "fe85e7ca8d0e3b274400d091c641460e75becc0053daad2273cab78718205c44",
+      "answer_text": "The evidence does not confirm whether the requested connector diagnostic logs were received for CASE-4821. [CASE-DIAG-4821 v1.0]",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-DIAG-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": false,
+      "expected_text_present": false,
+      "failure_categories": [
+        "expected_text",
+        "expected_facts",
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 8298.566,
+      "generation_mode": "llm",
+      "golden_contract_id": "case-4821-diagnostic-logs-unknown",
+      "grounding_checks_passed": false,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 37,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 41.787,
+      "retrieval_mode": "hybrid",
+      "run_number": 1,
+      "scenario_key": "unknown_diagnostics",
+      "scenario_label": "5 \u00b7 Deliberately unknown diagnostics",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3183.492,
+      "total_latency_ms": 11535.669,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_uncertainty": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "fe85e7ca8d0e3b274400d091c641460e75becc0053daad2273cab78718205c44",
+      "answer_text": "The evidence does not confirm whether the requested connector diagnostic logs were received for CASE-4821. [CASE-DIAG-4821 v1.0]",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-DIAG-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": false,
+      "expected_text_present": false,
+      "failure_categories": [
+        "expected_text",
+        "expected_facts",
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 5321.406,
+      "generation_mode": "llm",
+      "golden_contract_id": "case-4821-diagnostic-logs-unknown",
+      "grounding_checks_passed": false,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 37,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 19.81,
+      "retrieval_mode": "hybrid",
+      "run_number": 2,
+      "scenario_key": "unknown_diagnostics",
+      "scenario_label": "5 \u00b7 Deliberately unknown diagnostics",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3396.737,
+      "total_latency_ms": 8748.688,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_uncertainty": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "fe85e7ca8d0e3b274400d091c641460e75becc0053daad2273cab78718205c44",
+      "answer_text": "The evidence does not confirm whether the requested connector diagnostic logs were received for CASE-4821. [CASE-DIAG-4821 v1.0]",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-DIAG-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": false,
+      "expected_text_present": false,
+      "failure_categories": [
+        "expected_text",
+        "expected_facts",
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 5286.048,
+      "generation_mode": "llm",
+      "golden_contract_id": "case-4821-diagnostic-logs-unknown",
+      "grounding_checks_passed": false,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 37,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.469,
+      "retrieval_mode": "hybrid",
+      "run_number": 3,
+      "scenario_key": "unknown_diagnostics",
+      "scenario_label": "5 \u00b7 Deliberately unknown diagnostics",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3371.68,
+      "total_latency_ms": 8686.656,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_uncertainty": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "fe85e7ca8d0e3b274400d091c641460e75becc0053daad2273cab78718205c44",
+      "answer_text": "The evidence does not confirm whether the requested connector diagnostic logs were received for CASE-4821. [CASE-DIAG-4821 v1.0]",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-DIAG-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": false,
+      "expected_text_present": false,
+      "failure_categories": [
+        "expected_text",
+        "expected_facts",
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 5361.716,
+      "generation_mode": "llm",
+      "golden_contract_id": "case-4821-diagnostic-logs-unknown",
+      "grounding_checks_passed": false,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 37,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 14.969,
+      "retrieval_mode": "hybrid",
+      "run_number": 4,
+      "scenario_key": "unknown_diagnostics",
+      "scenario_label": "5 \u00b7 Deliberately unknown diagnostics",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 4074.381,
+      "total_latency_ms": 9460.063,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_uncertainty": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "fe85e7ca8d0e3b274400d091c641460e75becc0053daad2273cab78718205c44",
+      "answer_text": "The evidence does not confirm whether the requested connector diagnostic logs were received for CASE-4821. [CASE-DIAG-4821 v1.0]",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-DIAG-4821"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": false,
+      "expected_text_present": false,
+      "failure_categories": [
+        "expected_text",
+        "expected_facts",
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 5306.859,
+      "generation_mode": "llm",
+      "golden_contract_id": "case-4821-diagnostic-logs-unknown",
+      "grounding_checks_passed": false,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 37,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 12.846,
+      "retrieval_mode": "hybrid",
+      "run_number": 5,
+      "scenario_key": "unknown_diagnostics",
+      "scenario_label": "5 \u00b7 Deliberately unknown diagnostics",
+      "selected_document_ids": [
+        "CALL-4821-20261105-v1.0",
+        "CASE-DIAG-4821-v1.0",
+        "CASE-NOTE-4821-v1.0",
+        "KB-TELEMETRY-DELAY-v2.1",
+        "POL-TELEMETRY-RESPONSE-v2.0"
+      ],
+      "snowflake_latency_ms": 3729.228,
+      "total_latency_ms": 9059.303,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_confirmed_completion": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "9a05d5b976e1bb599d9b70ec05f689b2ce2923b18284550bcf63fe0dd1975ae3",
+      "answer_text": "An expired connector certificate blocked telemetry exports in CASE-4825 [CASE-NOTE-4825 v1.0]. The certificate rotation was completed at 11:35 UTC, the queued export replay completed at 12:10 UTC, and monitoring confirmed the backlog cleared at 12:30 UTC, with the case marked Resolved at 12:40 UTC [SF-CASE-HISTORY-HIST-4825-001 record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-NOTE-4825",
+        "SF-CASE-HISTORY-HIST-4825-001"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 15136.095,
+      "generation_mode": "llm",
+      "golden_contract_id": "resolved-telemetry-incident",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 105,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 45.998,
+      "retrieval_mode": "hybrid",
+      "run_number": 1,
+      "scenario_key": "resolved_incident",
+      "scenario_label": "6 \u00b7 Confirmed resolved incident",
+      "selected_document_ids": [
+        "CASE-NOTE-4825-v1.0"
+      ],
+      "snowflake_latency_ms": 3917.857,
+      "total_latency_ms": 19111.314,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_confirmed_completion": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "9a05d5b976e1bb599d9b70ec05f689b2ce2923b18284550bcf63fe0dd1975ae3",
+      "answer_text": "An expired connector certificate blocked telemetry exports in CASE-4825 [CASE-NOTE-4825 v1.0]. The certificate rotation was completed at 11:35 UTC, the queued export replay completed at 12:10 UTC, and monitoring confirmed the backlog cleared at 12:30 UTC, with the case marked Resolved at 12:40 UTC [SF-CASE-HISTORY-HIST-4825-001 record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-NOTE-4825",
+        "SF-CASE-HISTORY-HIST-4825-001"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11237.397,
+      "generation_mode": "llm",
+      "golden_contract_id": "resolved-telemetry-incident",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 105,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 20.622,
+      "retrieval_mode": "hybrid",
+      "run_number": 2,
+      "scenario_key": "resolved_incident",
+      "scenario_label": "6 \u00b7 Confirmed resolved incident",
+      "selected_document_ids": [
+        "CASE-NOTE-4825-v1.0"
+      ],
+      "snowflake_latency_ms": 3561.345,
+      "total_latency_ms": 14829.985,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_confirmed_completion": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "9a05d5b976e1bb599d9b70ec05f689b2ce2923b18284550bcf63fe0dd1975ae3",
+      "answer_text": "An expired connector certificate blocked telemetry exports in CASE-4825 [CASE-NOTE-4825 v1.0]. The certificate rotation was completed at 11:35 UTC, the queued export replay completed at 12:10 UTC, and monitoring confirmed the backlog cleared at 12:30 UTC, with the case marked Resolved at 12:40 UTC [SF-CASE-HISTORY-HIST-4825-001 record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-NOTE-4825",
+        "SF-CASE-HISTORY-HIST-4825-001"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11118.756,
+      "generation_mode": "llm",
+      "golden_contract_id": "resolved-telemetry-incident",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 105,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.622,
+      "retrieval_mode": "hybrid",
+      "run_number": 3,
+      "scenario_key": "resolved_incident",
+      "scenario_label": "6 \u00b7 Confirmed resolved incident",
+      "selected_document_ids": [
+        "CASE-NOTE-4825-v1.0"
+      ],
+      "snowflake_latency_ms": 3639.738,
+      "total_latency_ms": 14785.417,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_confirmed_completion": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "9a05d5b976e1bb599d9b70ec05f689b2ce2923b18284550bcf63fe0dd1975ae3",
+      "answer_text": "An expired connector certificate blocked telemetry exports in CASE-4825 [CASE-NOTE-4825 v1.0]. The certificate rotation was completed at 11:35 UTC, the queued export replay completed at 12:10 UTC, and monitoring confirmed the backlog cleared at 12:30 UTC, with the case marked Resolved at 12:40 UTC [SF-CASE-HISTORY-HIST-4825-001 record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-NOTE-4825",
+        "SF-CASE-HISTORY-HIST-4825-001"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 11247.819,
+      "generation_mode": "llm",
+      "golden_contract_id": "resolved-telemetry-incident",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 105,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 12.936,
+      "retrieval_mode": "hybrid",
+      "run_number": 4,
+      "scenario_key": "resolved_incident",
+      "scenario_label": "6 \u00b7 Confirmed resolved incident",
+      "selected_document_ids": [
+        "CASE-NOTE-4825-v1.0"
+      ],
+      "snowflake_latency_ms": 3359.852,
+      "total_latency_ms": 14629.866,
+      "unsupported_claims_avoided": true
+    },
+    {
+      "answer_correct": false,
+      "answer_quality_checks": {
+        "must_answer_directly": false,
+        "must_avoid_unsupported_claims": true,
+        "must_state_confirmed_completion": true,
+        "must_use_citations": true
+      },
+      "answer_quality_correct": false,
+      "answer_sha256": "9a05d5b976e1bb599d9b70ec05f689b2ce2923b18284550bcf63fe0dd1975ae3",
+      "answer_text": "An expired connector certificate blocked telemetry exports in CASE-4825 [CASE-NOTE-4825 v1.0]. The certificate rotation was completed at 11:35 UTC, the queued export replay completed at 12:10 UTC, and monitoring confirmed the backlog cleared at 12:30 UTC, with the case marked Resolved at 12:40 UTC [SF-CASE-HISTORY-HIST-4825-001 record].",
+      "citation_labels_inline": true,
+      "citation_relevance": true,
+      "citation_source_ids": [
+        "CASE-NOTE-4825",
+        "SF-CASE-HISTORY-HIST-4825-001"
+      ],
+      "citation_valid": true,
+      "expected_facts_present": true,
+      "expected_text_present": true,
+      "failure_categories": [
+        "answer_quality"
+      ],
+      "fallback": false,
+      "fallback_reason": null,
+      "finish_reason": "stop",
+      "generation_latency_ms": 10997.588,
+      "generation_mode": "llm",
+      "golden_contract_id": "resolved-telemetry-incident",
+      "grounding_checks_passed": true,
+      "history_status": "available",
+      "human_reviewed_answer_quality": null,
+      "llm_success": true,
+      "output_tokens": 105,
+      "required_evidence_present": true,
+      "retrieval_fallback_reason": null,
+      "retrieval_latency_ms": 16.105,
+      "retrieval_mode": "hybrid",
+      "run_number": 5,
+      "scenario_key": "resolved_incident",
+      "scenario_label": "6 \u00b7 Confirmed resolved incident",
+      "selected_document_ids": [
+        "CASE-NOTE-4825-v1.0"
+      ],
+      "snowflake_latency_ms": 3186.768,
+      "total_latency_ms": 14209.959,
+      "unsupported_claims_avoided": true
+    }
+  ],
+  "runs_per_scenario": 5,
+  "scenario_count": 5,
+  "schema_version": 1,
+  "summary": {
+    "overall": {
+      "answer_correctness_rate": 0.6,
+      "citation_relevance_rate": 1.0,
+      "citation_validity_rate": 1.0,
+      "failure_count": 10,
+      "failures": [
+        {
+          "categories": [
+            "expected_text",
+            "expected_facts",
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 1
+        },
+        {
+          "categories": [
+            "expected_text",
+            "expected_facts",
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 2
+        },
+        {
+          "categories": [
+            "expected_text",
+            "expected_facts",
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 3
+        },
+        {
+          "categories": [
+            "expected_text",
+            "expected_facts",
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 4
+        },
+        {
+          "categories": [
+            "expected_text",
+            "expected_facts",
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 5
+        },
+        {
+          "categories": [
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 1
+        },
+        {
+          "categories": [
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 2
+        },
+        {
+          "categories": [
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 3
+        },
+        {
+          "categories": [
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 4
+        },
+        {
+          "categories": [
+            "answer_quality"
+          ],
+          "fallback_reason": null,
+          "run_number": 5
+        }
+      ],
+      "fallback_rate": 0.0,
+      "fallback_reasons": {},
+      "finish_reasons": {
+        "stop": 25
+      },
+      "generation_latency": {
+        "p50_ms": 11075.114,
+        "p95_ms": 13701.569
+      },
+      "grounding_checks_rate": 0.8,
+      "human_reviewed_answer_quality_rate": null,
+      "llm_success_rate": 1.0,
+      "output_tokens_p50": 93,
+      "run_count": 25,
+      "total_latency": {
+        "p50_ms": 14344.803,
+        "p95_ms": 18278.462
+      }
+    },
+    "scenarios": {
+      "multi_source": {
+        "answer_correctness_rate": 1.0,
+        "citation_relevance_rate": 1.0,
+        "citation_validity_rate": 1.0,
+        "failure_count": 0,
+        "failures": [],
+        "fallback_rate": 0.0,
+        "fallback_reasons": {},
+        "finish_reasons": {
+          "stop": 5
+        },
+        "generation_latency": {
+          "p50_ms": 12437.101,
+          "p95_ms": 12891.553
+        },
+        "grounding_checks_rate": 1.0,
+        "human_reviewed_answer_quality_rate": null,
+        "llm_success_rate": 1.0,
+        "output_tokens_p50": 101,
+        "run_count": 5,
+        "total_latency": {
+          "p50_ms": 16203.463,
+          "p95_ms": 16271.867
+        }
+      },
+      "premium_policy": {
+        "answer_correctness_rate": 1.0,
+        "citation_relevance_rate": 1.0,
+        "citation_validity_rate": 1.0,
+        "failure_count": 0,
+        "failures": [],
+        "fallback_rate": 0.0,
+        "fallback_reasons": {},
+        "finish_reasons": {
+          "stop": 5
+        },
+        "generation_latency": {
+          "p50_ms": 8946.695,
+          "p95_ms": 11770.795
+        },
+        "grounding_checks_rate": 1.0,
+        "human_reviewed_answer_quality_rate": null,
+        "llm_success_rate": 1.0,
+        "output_tokens_p50": 77,
+        "run_count": 5,
+        "total_latency": {
+          "p50_ms": 12303.531,
+          "p95_ms": 15014.097
+        }
+      },
+      "resolved_incident": {
+        "answer_correctness_rate": 0.0,
+        "citation_relevance_rate": 1.0,
+        "citation_validity_rate": 1.0,
+        "failure_count": 5,
+        "failures": [
+          {
+            "categories": [
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 1
+          },
+          {
+            "categories": [
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 2
+          },
+          {
+            "categories": [
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 3
+          },
+          {
+            "categories": [
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 4
+          },
+          {
+            "categories": [
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 5
+          }
+        ],
+        "fallback_rate": 0.0,
+        "fallback_reasons": {},
+        "finish_reasons": {
+          "stop": 5
+        },
+        "generation_latency": {
+          "p50_ms": 11237.397,
+          "p95_ms": 14358.44
+        },
+        "grounding_checks_rate": 1.0,
+        "human_reviewed_answer_quality_rate": null,
+        "llm_success_rate": 1.0,
+        "output_tokens_p50": 105,
+        "run_count": 5,
+        "total_latency": {
+          "p50_ms": 14785.417,
+          "p95_ms": 18255.048
+        }
+      },
+      "standard_policy": {
+        "answer_correctness_rate": 1.0,
+        "citation_relevance_rate": 1.0,
+        "citation_validity_rate": 1.0,
+        "failure_count": 0,
+        "failures": [],
+        "fallback_rate": 0.0,
+        "fallback_reasons": {},
+        "finish_reasons": {
+          "stop": 5
+        },
+        "generation_latency": {
+          "p50_ms": 11075.114,
+          "p95_ms": 13401.962
+        },
+        "grounding_checks_rate": 1.0,
+        "human_reviewed_answer_quality_rate": null,
+        "llm_success_rate": 1.0,
+        "output_tokens_p50": 93,
+        "run_count": 5,
+        "total_latency": {
+          "p50_ms": 14344.803,
+          "p95_ms": 18028.666
+        }
+      },
+      "unknown_diagnostics": {
+        "answer_correctness_rate": 0.0,
+        "citation_relevance_rate": 1.0,
+        "citation_validity_rate": 1.0,
+        "failure_count": 5,
+        "failures": [
+          {
+            "categories": [
+              "expected_text",
+              "expected_facts",
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 1
+          },
+          {
+            "categories": [
+              "expected_text",
+              "expected_facts",
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 2
+          },
+          {
+            "categories": [
+              "expected_text",
+              "expected_facts",
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 3
+          },
+          {
+            "categories": [
+              "expected_text",
+              "expected_facts",
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 4
+          },
+          {
+            "categories": [
+              "expected_text",
+              "expected_facts",
+              "answer_quality"
+            ],
+            "fallback_reason": null,
+            "run_number": 5
+          }
+        ],
+        "fallback_rate": 0.0,
+        "fallback_reasons": {},
+        "finish_reasons": {
+          "stop": 5
+        },
+        "generation_latency": {
+          "p50_ms": 5321.406,
+          "p95_ms": 7711.196
+        },
+        "grounding_checks_rate": 0.0,
+        "human_reviewed_answer_quality_rate": null,
+        "llm_success_rate": 1.0,
+        "output_tokens_p50": 37,
+        "run_count": 5,
+        "total_latency": {
+          "p50_ms": 9059.303,
+          "p95_ms": 11120.548
+        }
+      }
+    }
+  },
+  "warmup": {
+    "answer_correct": true,
+    "answer_quality_checks": {},
+    "answer_quality_correct": true,
+    "answer_sha256": "9e4d9cfacae17e9674a97221870d466175235a19112e6ddbe4cec57288bfb8bb",
+    "answer_text": "CASE-4821 was escalated after three consecutive synchronization windows exceeded the latency baseline, as noted in [CASE-NOTE-4821 v1.0]. The customer observed telemetry arriving forty to sixty minutes late during three evening synchronization windows, as reported in [CALL-4821-20261105 v1.0]. The evidence does not confirm whether the delayed readings were due to data loss or whether the connector diagnostic logs were received or analyzed.",
+    "citation_labels_inline": true,
+    "citation_relevance": true,
+    "citation_source_ids": [
+      "CALL-4821-20261105",
+      "CASE-NOTE-4821"
+    ],
+    "citation_valid": true,
+    "expected_facts_present": true,
+    "expected_text_present": true,
+    "failure_categories": [],
+    "fallback": false,
+    "fallback_reason": null,
+    "finish_reason": "stop",
+    "generation_latency_ms": 30782.841,
+    "generation_mode": "llm",
+    "golden_contract_id": "multi-source-case-investigation",
+    "grounding_checks_passed": true,
+    "history_status": "available",
+    "human_reviewed_answer_quality": null,
+    "llm_success": true,
+    "output_tokens": 101,
+    "required_evidence_present": true,
+    "retrieval_fallback_reason": null,
+    "retrieval_latency_ms": 45788.916,
+    "retrieval_mode": "hybrid",
+    "run_number": 0,
+    "scenario_key": "multi_source",
+    "scenario_label": "2 \u00b7 Multi-source investigation",
+    "selected_document_ids": [
+      "CALL-4821-20261105-v1.0",
+      "CASE-DIAG-4821-v1.0",
+      "CASE-NOTE-4821-v1.0",
+      "KB-TELEMETRY-DELAY-v2.1",
+      "POL-TELEMETRY-RESPONSE-v2.0"
+    ],
+    "snowflake_latency_ms": 7591.683,
+    "total_latency_ms": 84180.704,
+    "unsupported_claims_avoided": true
+  },
+  "warmup_excluded": true
+}
