@@ -1,169 +1,196 @@
-# Salesforce FDE Servicing Agent PoC — Milestone 4 + Snowflake History
+# Salesforce Servicing Agent — FDE Proof of Concept
 
-A local, evaluation-driven proof of concept for evidence-grounded customer
-servicing and controlled, simulated CRM actions. Milestone 4 adds a measured
-evaluation dashboard, end-to-end golden scenarios, reproducible demo reset, and a
-polished technical-demo interface while preserving all prior capabilities.
-The Milestone 3.5 extension adds an opt-in, read-only Snowflake customer-history
-source to the existing investigation workflow.
+An evaluation-driven customer-servicing agent that combines deterministic service
+workflows, evidence-grounded investigation, controlled CRM actions, and optional
+local LLM generation. It is designed as a Salesforce Forward Deployed Engineer
+technical demonstration: the business objective is explicit, trust boundaries are
+visible, risky actions remain deterministic, and every measured result is backed by
+a checked-in evaluation artifact.
 
-All customers, cases, entitlements, policies, product documents, notes, and call
-transcripts are synthetic. The optional Snowflake connection reads synthetic
-history only. There is no real Salesforce integration, and no production
-credentials or private keys are stored in this repository.
+> **Scope:** all customers, cases, policies, entitlements, CRM writes, queues, and
+> evaluation questions are synthetic. SQLite simulates the operational CRM. The
+> optional Snowflake adapter reads synthetic history only. There is no live
+> Salesforce integration, production authentication, or financial transaction.
 
-## What works
+## Project overview
 
-- FastAPI `GET /health` and `POST /chat` endpoints plus Streamlit chat UI
-- Deterministic ticket-status routing that does not invoke LangGraph or RAG
-- LangGraph orchestration for authorized complex investigations
-- `HISTORY_BACKEND=mock|snowflake`, defaulting to network-free `mock`
-- Read-only Snowflake history from `CUSTOMER_ACTIVITY`, `CASE_HISTORY`, and
-  `SUPPORT_INTERACTIONS` using RSA key-pair authentication
-- Parameterized case/customer filters, verified Snowflake session context,
-  query timeouts, safe cleanup, and explicit no-fallback failure reporting
-- `lexical`, `semantic`, and `hybrid` retrieval modes selected with
-  `RETRIEVAL_MODE`
-- CPU Sentence Transformers using `sentence-transformers/all-MiniLM-L6-v2`
-- Fingerprinted local document-embedding cache that refreshes when model or
-  document text changes
-- Deterministic RRF with configurable `k` (default `60`)
-- Authorization and tenant filtering before either ranker runs
-- Effective-date, approval-state, product, and subscription-tier policy filters
-- Lexical fallback when semantic dependencies or the model are unavailable
-- Inline citations and structured evidence snippets
-- Optional OpenAI-compatible answer generation with citation validation
-- Retrieval mode, rankings, latency, selected evidence, cache state, and fallback
-  reason in JSON logs, API debug metadata, and the Streamlit trace panel
-- Ticket-note preview followed by explicit Confirm or Cancel
-- Authorization and current ticket-version revalidation immediately before writes
-- Durable `PENDING`, `COMPLETED`, `FAILED`, and `UNKNOWN` operation states
-- Database-enforced operation/note uniqueness and unknown-outcome reconciliation
-- Human handoffs with `CREATED`, `ACCEPTED`, and `RESOLVED` transitions
-- Deterministic SLA checks, a one-shot CLI sweep, and simulated backup routing
-- Repeatable end-to-end evaluation across chat, retrieval, policy, authorization,
-  actions, escalation, and recovery
-- Measured lexical/semantic/hybrid quality and latency dashboard
-- Seven reproducible read scenarios plus controlled-action/SLA demonstrations
-- Atomic synthetic demo-data reset
-- 128 passing offline pytest tests plus five opt-in integration tests
+Service teams often need to reconcile current CRM state, historical interactions,
+product guidance, customer entitlements, and policy versions before answering a
+seemingly simple question. A conversational layer can reduce that research burden,
+but only if it prevents cross-customer leakage, distinguishes current facts from
+history, cites applicable evidence, and gates writes behind deterministic controls.
 
-## Architecture overview
+This PoC tests that operating model through three paths:
 
-```text
-Streamlit demo + evaluation dashboard
-              │ HTTP / trusted demo-user header
-              ▼
-FastAPI ── deterministic intent router ── ticket-status fast path
-   │
-   ├─ LangGraph read workflow
-   │    ├─ authorized SQLite CRM + entitlement tools
-   │    ├─ lexical / semantic / RRF hybrid retrieval
-   │    ├─ optional authorized Snowflake historical evidence
-   │    └─ deterministic or optional citation-validated LLM generation
-   │
-   ├─ LangGraph controlled-action workflow
-   │    └─ preview → confirmation → version check → idempotent SQLite write
-   │
-   └─ deterministic SLA + authorized human handoff services
+1. **Deterministic servicing** for authoritative ticket status and SLA rules.
+2. **LangGraph investigations** for authorized CRM, Snowflake, and RAG evidence.
+3. **Controlled actions** for confirmation-gated notes, idempotent recovery, and
+   human handoff.
 
-Golden scenarios → isolated/reset SQLite runs → measured JSON report → dashboard
+The intended business hypotheses are improved CPRR, CSAT, time to resolution
+(TTR), SLA compliance, and repeat-contact rate. The repository does **not** claim
+improvement in any of those KPIs: it measures technical task completion, retrieval,
+grounding, authorization, action safety, escalation behavior, and latency over
+synthetic scenarios.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    User[Service agent] --> UI[Streamlit demo]
+    UI -->|HTTP + demo identity key| API[FastAPI]
+    API --> Router{Deterministic intent router}
+
+    Router -->|Ticket status| Fast[Status + SLA fast path]
+    Fast --> CRM[(SQLite synthetic CRM)]
+
+    Router -->|Complex request| Graph[LangGraph investigation]
+    Graph --> Auth[Authorized read tools]
+    Auth --> CRM
+    Auth --> History{History backend}
+    History -->|Default| Mock[Network-free mock]
+    History -->|Optional read only| SF[(Snowflake history)]
+    Auth --> RAG[Lexical / semantic / hybrid RAG]
+    RAG --> Corpus[(16-document local corpus)]
+    RAG --> Cache[(Fingerprint embedding cache)]
+
+    Graph --> Gen{Grounded generation}
+    Gen -->|No provider or rejected output| Deterministic[Deterministic fallback]
+    Gen -->|OpenAI-compatible API| Ollama[Local Ollama qwen3:4b-instruct]
+    Ollama --> Validate[Claim and citation validation]
+    Validate -->|Reject| Deterministic
+
+    API --> Actions[Controlled-action workflow]
+    Actions -->|Preview → confirm → revalidate| CRM
+    API --> Handoff[Human handoff + deterministic SLA]
+    Handoff --> CRM
+
+    Offline[24-scenario offline evaluation] --> Artifacts[(Saved JSON reports)]
+    Live[25-response live evaluation] --> Artifacts
+    Artifacts --> Dashboard[Read-only evaluation dashboard]
+    Dashboard --> UI
 ```
 
-The main interview design points are explicit trust boundaries, deterministic
-rules for high-risk decisions, evidence before generation, database-enforced
-idempotency, and evaluation artifacts that distinguish measured behavior from
-illustrative business narratives.
+### Component responsibilities
 
-SQLite CRM remains authoritative for current ticket status. Snowflake is queried
-only after the server resolves and authorizes the CRM case, and contributes
-historical evidence to complex investigations; it never overrides the status
-fast path.
+| Component | Implemented responsibility |
+|---|---|
+| Streamlit | Demo scenarios, chat, citations, stage latency, traces, controlled-action controls, escalation status, and saved evaluation dashboards. |
+| FastAPI | Health, chat, note-operation, handoff, and SLA endpoints with server-resolved demo-user context. |
+| Intent router | Regex-based ticket-status fast path; no LLM, LangGraph, or RAG invocation for explicit status requests. |
+| LangGraph | Four-step complex-request workflow: triage, authorized case context, grounded evidence, and response composition. A separate minimal graph executes note commands. |
+| SQLite | Synthetic customers, cases, entitlements, current ticket state, operation journal, notes, handoffs, record versions, and SLA deadlines. It remains authoritative for current status. |
+| Snowflake | Optional RSA-authenticated, read-only history from `CUSTOMER_ACTIVITY`, `CASE_HISTORY`, and `SUPPORT_INTERACTIONS`; it never overrides current CRM state. |
+| Hybrid RAG | Lexical ranking, CPU MiniLM cosine similarity, and Reciprocal Rank Fusion (RRF, default `k=60`) over approved, applicable, authorized documents. |
+| Generation | Deterministic evidence synthesis by default/fallback, or optional OpenAI-compatible Ollama generation with output, claim, polarity, and citation checks. |
 
-## Retrieval flow
+## Key capabilities
 
-```text
-Complex request
-  └─> authorized case and entitlement reads
-       ├─> authorized Snowflake history read (when configured)
-       └─> record / tenant / policy applicability filtering
-            ├─> lexical ranking
-            ├─> semantic cosine ranking
-            └─> hybrid: RRF(lexical, semantic), k=60
-                 └─> evidence sufficiency and conflict checks
-                      └─> deterministic or optional LLM answer
-                           └─> validated citations
-```
+- **Deterministic ticket servicing:** returns current status, owner, priority, last
+  update, and SLA state directly from authorized CRM data.
+- **Multi-source investigation:** combines current CRM facts, verified
+  entitlements, approved RAG documents, and optional Snowflake history.
+- **Evidence-grounded answers:** returns inline source identifiers and snippets;
+  missing, conflicting, outdated, or inapplicable evidence produces uncertainty
+  instead of a fabricated conclusion.
+- **Customer-specific policy applicability:** filters by product, active
+  entitlement, tier, approval status, effective date, and document version. The
+  newest policy is not automatically treated as applicable.
+- **Controlled ticket notes:** prepare/preview, explicit customer-confirmation
+  attestation, authorization and record-version revalidation, atomic save, cancel,
+  and unknown-outcome reconciliation.
+- **Human escalation:** authorized handoffs carry permitted case context, source
+  references, and troubleshooting history through `CREATED`, `ACCEPTED`, and
+  `RESOLVED` states.
+- **Deterministic SLA monitoring:** request-time checks and a one-shot CLI sweep
+  create at most one escalation per case/deadline and simulate backup routing for
+  unaccepted handoffs.
+- **Observability:** structured JSON events and API/UI diagnostics record execution
+  IDs, modes, rankings, selected evidence, stage latency, state transitions, and
+  safe failure categories.
 
-Protected documents are filtered before lexical scoring or semantic similarity.
-Consequently, unauthorized document IDs cannot appear in rankings, logs, prompts,
-citations, or the UI.
+## Engineering decisions
 
-## Controlled-action flow
+### Hybrid orchestration
 
-```text
-Prepare note
-  └─> authorize case + snapshot ticket record_version
-       └─> durable PENDING operation + preview
-            ├─> Cancel: FAILED / CANCELLED
-            └─> Confirm
-                 └─> reauthorize + compare current record_version
-                      ├─> changed: FAILED / STALE_CONFIRMATION
-                      └─> unchanged: atomic note insert + version increment
-                           ├─> acknowledged: COMPLETED
-                           └─> simulated lost response: UNKNOWN
-                                └─> reconcile by unique operation_id: COMPLETED
-```
+Not every service request benefits from an agent loop. The status path is faster,
+more predictable, and easier to audit as deterministic application code. LangGraph
+is reserved for complex read investigations where ordered tool orchestration and a
+compact shared state are useful. Writes and SLA decisions stay in application
+services and database transactions rather than being delegated to model reasoning.
 
-SQLite `BEGIN IMMEDIATE`, operation primary keys, and a unique note
-`operation_id` make retries safe within this local database. This PoC does not
-claim exactly-once behavior for a future external CRM API.
+### Hybrid retrieval
 
-Important files:
+Lexical retrieval is strong for case IDs, policy phrases, and exact service terms;
+semantic retrieval is useful for customer paraphrases. RRF combines both rankings
+without introducing a reranker or vector database. The corpus is small enough for
+local CPU embeddings, and a fingerprinted JSON cache invalidates when the model or
+document text changes. If Sentence Transformers cannot initialize, semantic and
+hybrid modes explicitly fall back to lexical retrieval and report the reason.
+
+### Application-level safeguards
+
+Authorization, entitlement validation, effective-date filtering, SLA rules, action
+confirmation, idempotency, and output validation are enforced outside the LLM.
+Protected documents are filtered before query ranking, so unauthorized content
+cannot enter result rankings, prompts, citations, or request diagnostics. The local
+corpus-wide embedding cache can contain vectors for protected synthetic documents;
+it is a local demo artifact, not a tenant-isolated production vector store. This
+keeps the model inside a bounded evidence-synthesis role rather than treating it as
+the policy or authorization engine.
+
+## Enterprise safeguards
+
+| Control | Current implementation |
+|---|---|
+| Identity and record authorization | The `X-Demo-User` header selects a key; permissions come only from a server-side registry. Every CRM, entitlement, history, evidence, action, and handoff read rechecks customer access. This is a demo control, not production authentication. |
+| Tenant-safe retrieval | Customer/case filtering precedes lexical and semantic ranking. Snowflake queries include parameterized customer and, where applicable, case predicates; returned identifiers are verified again. |
+| Claim validation | LLM output is rejected for missing/irrelevant citations, exposed reasoning, partial completion, unsupported certainty or negation, root causes, and future-resolution promises. Rejection activates a labeled deterministic fallback. |
+| Confirmation-gated writes | A note is previewed before any mutation. Confirmation revalidates user access and the ticket `record_version`; stale confirmations fail with a conflict. |
+| Idempotency and retry safety | Durable operation IDs and database uniqueness prevent duplicate note/handoff writes. Reusing an ID with different content is rejected. Callers can safely retry with the same ID. |
+| Unknown outcomes | A simulated timeout after commit produces `UNKNOWN`; reconciliation searches by the unique operation ID and transitions to `COMPLETED` without another write. This is not a claim of exactly-once behavior for an external CRM API. |
+| Deterministic escalation | SLA deadlines and backup-routing rules execute independently of the LLM. Handoff transitions are validated and journaled. |
+| Snowflake isolation | RSA key-pair authentication, verified role/database/schema, bounded query timeouts, approved columns, `SELECT`-only application code, connection cleanup, and no silent mock fallback after a real failure. |
+| Auditability | SQLite operation/handoff records plus structured events capture operation IDs, state transitions, latency, outcomes, and safe error categories. Secrets, private-key contents, and Snowflake rows are not logged. |
+
+The application does not implement a general automatic retry loop or circuit
+breaker. Read failures are surfaced safely; write retry behavior relies on stable
+operation IDs and reconciliation.
+
+## Repository layout
 
 ```text
 .
-├── evaluations/
-│   ├── benchmark_results.json
-│   ├── golden_questions.json
-│   ├── latest_results.json
-│   └── live_ollama/
-│       ├── latest.json
-│       └── live_ollama_<timestamp>.json
 ├── src/servicing_agent/
-│   ├── corpus/knowledge.json
-│   ├── actions.py
-│   ├── action_workflow.py
-│   ├── benchmark_ollama.py
-│   ├── demo_reset.py
-│   ├── demo_scenarios.py
-│   ├── evaluation.py
-│   ├── evaluation_dashboard.py
-│   ├── generation.py
-│   ├── handoffs.py
-│   ├── history.py
-│   ├── index_embeddings.py
-│   ├── retrieval.py
-│   ├── run_streamlit.py
-│   ├── sla.py
-│   ├── sla_sweep.py
-│   ├── service.py
-│   ├── streamlit_app.py
-│   ├── tools.py
-│   └── workflow.py
+│   ├── api.py, service.py, workflow.py       # API and orchestration
+│   ├── database.py, tools.py, auth.py        # synthetic CRM and authorization
+│   ├── retrieval.py, corpus/knowledge.json   # local RAG
+│   ├── history.py                            # mock/Snowflake adapter
+│   ├── generation.py                         # deterministic + optional LLM
+│   ├── actions.py, handoffs.py, sla.py       # controlled operations
+│   └── evaluation*.py, benchmark_ollama.py   # repeatable evaluation
+├── evaluations/
+│   ├── golden_questions.json                 # 24 offline contracts
+│   ├── latest_results.json                   # current offline report
+│   └── live_ollama/latest.json               # saved live report
+├── snowflake/                                # idempotent synthetic seed SQL
 ├── tests/
-├── snowflake/
-│   ├── seed_correct_case_4821_customer.sql
-│   └── seed_synthetic_history.sql
 ├── .env.example
 └── pyproject.toml
 ```
 
-## Windows setup (PowerShell)
+## Setup on Windows
 
-Prerequisite: Python 3.11 or newer with the Windows `py` launcher.
+### Prerequisites
 
-### Lexical-only setup
+- Windows PowerShell and Python 3.11+
+- Ollama only for optional local LLM generation
+- A synthetic Snowflake environment and encrypted RSA private key only for the
+  optional live-history path
+
+### 1. Create the environment
+
+From the repository root:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -173,151 +200,43 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-### Semantic and hybrid setup on CPU
-
-Install the official CPU PyTorch wheel first so a CUDA build is not selected,
-then install the semantic extra:
+For semantic/hybrid retrieval on Windows CPU, install the CPU PyTorch wheel and
+the semantic extra:
 
 ```powershell
-py -3.11 -m venv .venv
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 python -m pip install -e ".[dev,semantic]"
 ```
 
-This configuration runs the embedding model on CPU and works without an NVIDIA
-GPU.
-
-### Snowflake-enabled setup
-
-Install the connector extra in the same virtual environment. Include `semantic`
-as shown when hybrid retrieval is also required:
+Add the Snowflake connector only when needed:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev,semantic,snowflake]"
 ```
 
-The connector is imported lazily, so the default mock backend does not require
-Snowflake packages, credentials, or network access.
-
-## One root `.env` file
-
-All local application configuration is loaded from `.env` in the project root by
-`servicing_agent.settings`. The path is derived from the installed module, not
-the current directory, so Uvicorn, Streamlit, pytest, and the Python CLIs find the
-same file even when launched elsewhere. Explicit process environment variables
-take precedence, which keeps deployment and test overrides possible without code
-changes.
-
-Create the local file without replacing one that already exists:
+### 2. Configure the root `.env`
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-Both `.env` and private-key extensions are ignored by Git. `.env.example` is the
-tracked, secret-free inventory. Configuration is grouped as follows:
+[`servicing_agent.settings`](src/servicing_agent/settings.py) resolves the root
+`.env` independently of the current working directory. Explicit process variables
+override file values. `.env`, `.p8`, and `.pem` files are ignored by Git.
 
-| Area | Variables |
+The tracked [`.env.example`](.env.example) is the complete variable inventory.
+The most important controls are:
+
+| Area | Variables and safe local defaults |
 |---|---|
-| SQLite | `SERVICE_AGENT_DB_PATH`, `SERVICE_AGENT_SQLITE_TIMEOUT_SECONDS`, `SERVICE_AGENT_SQLITE_BUSY_TIMEOUT_MS` |
-| Logging/tracing | `SERVICE_AGENT_LOG_LEVEL`, `SERVICE_AGENT_LOG_JSON`, `SERVICE_AGENT_TRACE_ENABLED` |
-| FastAPI/client | `SERVICE_AGENT_API_HOST`, `SERVICE_AGENT_API_PORT`, `SERVICE_AGENT_API_RELOAD`, `SERVICE_AGENT_API_URL`, `SERVICE_AGENT_API_REQUEST_TIMEOUT_SECONDS` |
-| Streamlit | `SERVICE_AGENT_UI_HOST`, `SERVICE_AGENT_UI_PORT`, `SERVICE_AGENT_UI_API_READ_TIMEOUT_SECONDS`, `SERVICE_AGENT_UI_HEADLESS`, `SERVICE_AGENT_UI_PAGE_TITLE`, `SERVICE_AGENT_UI_PAGE_ICON`, `SERVICE_AGENT_UI_LAYOUT`, `SERVICE_AGENT_UI_GATHER_USAGE_STATS` |
-| LLM | `SERVICE_AGENT_LLM_PROVIDER`, `SERVICE_AGENT_LLM_API_KEY`, `SERVICE_AGENT_LLM_MODEL`, `SERVICE_AGENT_LLM_API_BASE`, `SERVICE_AGENT_LLM_TIMEOUT_SECONDS`, `SERVICE_AGENT_LLM_TEMPERATURE`, `SERVICE_AGENT_LLM_MAX_TOKENS`, `SERVICE_AGENT_LLM_REASONING_EFFORT` |
-| Retrieval | `RETRIEVAL_MODE`, `RETRIEVAL_MODEL`, `RETRIEVAL_CACHE_DIR`, `RETRIEVAL_TOP_K`, `RETRIEVAL_RRF_K`, `RETRIEVAL_SEMANTIC_MIN_SCORE`, `RETRIEVAL_SEMANTIC_MIN_TOP_SCORE` |
-| History/Snowflake | `HISTORY_BACKEND`, history evidence limits, all `SNOWFLAKE_*` identity/key/timeout/query variables |
-| SLA/evaluation | `SLA_BACKUP_AFTER_MINUTES`, all `EVALUATION_*` paths, modes, runs, generation, log level, and fixed-clock values |
-| Offline/testing | `HF_HUB_OFFLINE`, `TRANSFORMERS_OFFLINE`, `RUN_SNOWFLAKE_INTEGRATION`, `RUN_OLLAMA_INTEGRATION` |
+| Data | `SERVICE_AGENT_DB_PATH=data/service_agent.db` |
+| Retrieval | `RETRIEVAL_MODE=lexical`; use `hybrid` after initializing embeddings. Model: `sentence-transformers/all-MiniLM-L6-v2`; `RETRIEVAL_TOP_K=5`; `RETRIEVAL_RRF_K=60`. |
+| History | `HISTORY_BACKEND=mock` performs no network request. Use `snowflake` only with all required credentials below. |
+| LLM | `SERVICE_AGENT_LLM_PROVIDER=openai_compatible`, model `qwen3:4b-instruct`, base URL `http://localhost:11434/v1`, bounded `120`-second generation timeout and `512` output tokens. Missing/unavailable Ollama uses the deterministic fallback. Set provider to `none` for deterministic-only operation. |
+| API/UI | API `127.0.0.1:8000`, Streamlit `127.0.0.1:8501`, UI-to-API read timeout `240` seconds. |
+| Evaluation | Dataset/result paths, modes, runs, fixed date/clock, and configured-LLM opt-in use the `EVALUATION_*` variables. |
 
-Relative paths in `.env` are resolved against the project root. Boolean values
-accept `true`/`false`, `1`/`0`, `yes`/`no`, or `on`/`off`. Invalid modes, ports,
-URLs, dates, ranges, and required Snowflake fields fail with the relevant variable
-name; secret values are never included in those errors.
-
-## Initialize the local database
-
-The API and SLA CLI initialize and migrate SQLite automatically. To initialize it
-explicitly from PowerShell:
-
-```powershell
-python -m servicing_agent.demo_reset
-```
-
-The database contains synthetic records only. Milestone 3 adds `operations`,
-`ticket_notes`, and `case_handoffs` tables plus ticket version and SLA fields.
-Existing local databases from earlier milestones are migrated additively on
-startup.
-
-Reset all synthetic demo mutations and restore canonical records before a live
-demonstration:
-
-```powershell
-python -m servicing_agent.demo_reset
-```
-
-The reset runs in one SQLite transaction and affects only the explicitly selected
-local database. Running it repeatedly produces the same canonical state: five
-cases, three customers, four authoritative entitlements, and no demo-created
-notes, operations, or handoffs. It never connects to or modifies Snowflake.
-
-## Initialize or refresh embeddings
-
-The first command downloads MiniLM and creates a fingerprinted JSON embedding
-index under `data\embedding_cache`. The directory is ignored by Git.
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m servicing_agent.index_embeddings
-```
-
-Force a recomputation:
-
-```powershell
-python -m servicing_agent.index_embeddings --force
-```
-
-Changing the configured model or any document's embedding text automatically
-changes the fingerprint, so stale vectors are not reused. No vector database or
-index server is required.
-
-## Retrieval configuration
-
-Edit the retrieval block in `.env`, for example:
-
-```dotenv
-RETRIEVAL_MODE=hybrid
-RETRIEVAL_MODEL=sentence-transformers/all-MiniLM-L6-v2
-RETRIEVAL_CACHE_DIR=data/embedding_cache
-RETRIEVAL_TOP_K=5
-RETRIEVAL_RRF_K=60
-RETRIEVAL_SEMANTIC_MIN_SCORE=0.25
-RETRIEVAL_SEMANTIC_MIN_TOP_SCORE=0.45
-```
-
-The top-score confidence gate was added after the golden evaluation showed that
-an unsupported hardware-replacement question had a cosine score around `0.417`
-against a case note. The `0.45` default rejected that false positive while
-retaining the evaluated relevant paraphrases. It is a small-corpus demo threshold,
-not a production calibration.
-
-If semantic initialization fails, `semantic` and `hybrid` requests use lexical
-retrieval and report the reason in `retrieval_debug.fallback_reason`.
-
-## Snowflake history configuration
-
-Mock mode is the safe default and performs no Snowflake connection:
-
-```dotenv
-HISTORY_BACKEND=mock
-```
-
-For the verified synthetic Snowflake environment, edit only the ignored `.env`
-file. Use forward slashes in the Windows key path and quote values containing `#`
-or leading/trailing spaces:
+Snowflake mode additionally requires:
 
 ```dotenv
 HISTORY_BACKEND=snowflake
@@ -328,546 +247,234 @@ SNOWFLAKE_WAREHOUSE=SERVICING_POC_WH
 SNOWFLAKE_DATABASE=SERVICING_AGENT_DEMO
 SNOWFLAKE_SCHEMA=HISTORY
 SNOWFLAKE_PRIVATE_KEY_FILE=C:/Users/your-user/.snowflake/keys/servicing_agent_key.p8
-SNOWFLAKE_PRIVATE_KEY_PASSPHRASE="your-encrypted-key-passphrase"
-SNOWFLAKE_LOGIN_TIMEOUT_SECONDS=20
-SNOWFLAKE_NETWORK_TIMEOUT_SECONDS=30
-SNOWFLAKE_QUERY_TIMEOUT_SECONDS=20
-SNOWFLAKE_HISTORY_ROW_LIMIT=25
-SNOWFLAKE_QUERY_TAG=fde_servicing_agent_history_read
-SNOWFLAKE_APPLICATION=FDE_SERVICING_AGENT_POC
+SNOWFLAKE_PRIVATE_KEY_PASSPHRASE="your-local-passphrase"
 ```
 
-The private-key contents remain in the external encrypted `.p8` file; only its
-path and passphrase are read from `.env`. The connector receives the passphrase
-directly, so startup and tests never use `getpass` or another interactive prompt.
-Restrict local `.env` permissions because it contains plaintext development
-secrets, and never paste the file into logs or support messages.
+The connector passes the encrypted-key path and passphrase directly using
+`SNOWFLAKE_JWT`; there is no interactive prompt. Never commit or print `.env`, the
+passphrase, or private-key material. The application role must remain read-only.
 
-The adapter requests `SNOWFLAKE_JWT`, verifies that Snowflake actually selected
-the configured role, database, and schema, discovers only approved evidence
-columns, and issues only `SELECT` statements. `CASE_HISTORY` and
-`SUPPORT_INTERACTIONS` are filtered by both server-resolved customer and case;
-`CUSTOMER_ACTIVITY` is filtered by the authorized customer. Credentials and row
-contents are never written to application logs.
-
-If Snowflake authentication, authorization, or a query fails, the complex answer
-continues only with independently authorized CRM/RAG evidence and returns an
-explicit `history_debug.status = unavailable` warning. It does not silently use
-mock history.
-
-### Seed the synthetic Snowflake history
-
-[`snowflake\seed_synthetic_history.sql`](snowflake/seed_synthetic_history.sql)
-contains ID-keyed `MERGE` statements for the three approved history tables. Run
-it with a SnowSQL connection whose selected role owns the synthetic demo tables
-or has equivalently scoped `MERGE` privileges:
+### 3. Initialize local data and embeddings
 
 ```powershell
-Set-Location C:\path\to\serviceagent
-snowsql -c your_servicing_demo_owner_connection `
-  -f .\snowflake\seed_synthetic_history.sql
+python -m servicing_agent.demo_reset
+python -m servicing_agent.index_embeddings
 ```
 
-The connection alias is local SnowSQL configuration, not an application
-credential. The script is repeatable, updates/inserts only named synthetic IDs,
-deletes nothing, and ends with three expected-count verification queries. It
-also corrects legacy `HIST-001` to the authorized `CUST-1001` identifier. Do not
-run it as `SERVICING_HISTORY_READER`, and do not grant that application role
-`INSERT`, `UPDATE`, `DELETE`, `MERGE`, or ownership. The application connector
-continues to issue parameterized `SELECT` statements only.
+The reset is atomic, local-only, and repeatable. It restores three customers, five
+cases, four entitlements, and removes demo-created notes, operations, and handoffs.
+Embedding initialization downloads MiniLM on first use and writes a fingerprinted
+cache under `data\embedding_cache`.
 
-The canonical scenarios are:
-
-- `CASE-4821`: Premium telemetry investigation with observed delays and retries,
-  scheduled-but-unconfirmed maintenance, requested diagnostics of unknown receipt,
-  and no confirmed root cause or resolution date.
-- `CASE-4822`: Standard billing request with administrator verification, a
-  completed update, customer confirmation, and a recorded resolution.
-- `CASE-4823`: Standard dashboard investigation awaiting customer diagnostics;
-  a failed reproduction attempt is not treated as proof of non-occurrence.
-- `CASE-4824`: Standard telemetry monitoring where one retry recovered and the
-  escalation threshold was not reached.
-- `CASE-4825`: Premium telemetry incident with a confirmed certificate cause,
-  completed certificate rotation and queued replay, verified backlog clearance,
-  and a recorded resolution.
-
-## Run locally
-
-Terminal 1 — API:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m servicing_agent.api
-```
-
-Terminal 2 — UI:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m servicing_agent.run_streamlit
-```
-
-Open <http://localhost:8501>. API documentation is at
-<http://localhost:8000/docs>.
-
-The UI has three focused areas:
-
-- **Customer servicing** — selectable reproducible scenarios, chat, citations,
-  execution traces, and Snowflake history freshness/latency when enabled.
-- **Controlled actions** — simulated note confirmation, reconciliation, human
-  escalation, and deterministic SLA status.
-- **Evaluation dashboard** — measured quality, latency, scenario outcomes, and
-  failure categories loaded from `evaluations\latest_results.json`.
-
-The default answer generator is deterministic and explicitly says it is not an
-LLM. Retrieval and policy applicability are real local operations in every mode.
-CRM writes, handoff queues, and SLA escalations are explicitly simulated in the
-UI and persist only in local SQLite.
-
-## Local Ollama generation
-
-The existing OpenAI-compatible generator works directly with Ollama; no separate
-client is required. Install Ollama, start it, and download the configured model:
+### 4. Optional local Ollama
 
 ```powershell
 ollama serve
 ollama pull qwen3:4b-instruct
 ```
 
-The root `.env` uses:
+The existing OpenAI-compatible client calls Ollama; no separate Ollama SDK is used.
+The placeholder API key is `ollama` and is not a credential. Restart FastAPI after
+changing `.env`.
 
-```dotenv
-SERVICE_AGENT_LLM_PROVIDER=openai_compatible
-SERVICE_AGENT_LLM_API_KEY=ollama
-SERVICE_AGENT_LLM_MODEL=qwen3:4b-instruct
-SERVICE_AGENT_LLM_API_BASE=http://localhost:11434/v1
-SERVICE_AGENT_LLM_TIMEOUT_SECONDS=120
-SERVICE_AGENT_LLM_TEMPERATURE=0
-SERVICE_AGENT_LLM_MAX_TOKENS=512
-SERVICE_AGENT_LLM_REASONING_EFFORT=none
-```
+### 5. Run the application
 
-Restart `python -m servicing_agent.api` after changing `.env`. The key is read
-only through centralized settings; `ollama` is a non-secret placeholder required
-by the OpenAI-compatible request format. The configurable 120-second timeout
-allows for CPU model startup and generation. Qwen3 receives its documented
-`/no_think` switch on the user turn, and the OpenAI-compatible request uses
-`reasoning_effort=none` to request no thinking output. Ollama documents this
-control for `/v1/chat/completions` in its
-[OpenAI compatibility reference](https://github.com/ollama/ollama/blob/main/docs/api/openai-compatibility.mdx#v1chatcompletions).
-The 512-token output budget remains bounded for concise servicing answers.
-Responses that end with `finish_reason=length` are rejected and use the
-intent-aware deterministic fallback.
-Retrieval, authorization, policy
-selection, and the ticket-status path are never delegated to the LLM. Missing or
-invalid citations cause deterministic fallback.
-
-Customer-facing LLM output is also rejected when it contains planning or
-thinking text, ends mid-sentence, does not answer the requested answer type,
-makes an unsupported future-resolution promise, or attaches a citation to a
-claim with no substantive overlap with that source. Guarantee and controlled
-action requests are handled deterministically without an LLM call. The fallback
-answers status, explanation, timeline, guarantee, unknown-information,
-escalation, and action requests directly before adding only material evidence.
-
-Snowflake `EVENT_TIME` is treated as the historical event timestamp. Retrieval
-time remains separate in `history_debug.retrieved_at` and is never substituted
-as a citation's event date; a missing event timestamp is labeled unavailable.
-
-For complex requests, the configured generator receives only the already
-authorized evidence selected by the application, grouped as current CRM facts,
-verified entitlements, approved RAG evidence, and read-only Snowflake historical
-context. Its output must cite the supplied source labels and distinguish missing
-information from confirmed facts. The Streamlit response shows the actual mode
-(`Configured LLM` or `Deterministic evidence fallback`) and every returned source
-ID. LLM failure never changes authorization, deterministic SLA decisions, or
-controlled-write confirmation rules.
-
-Run the real local smoke test after Ollama is serving the model:
+Terminal 1:
 
 ```powershell
-$env:RUN_OLLAMA_INTEGRATION = "true"
-python -m pytest -m ollama_integration tests\test_ollama_connection.py -q
-Remove-Item Env:RUN_OLLAMA_INTEGRATION
+.\.venv\Scripts\Activate.ps1
+python -m servicing_agent.api
 ```
 
-The default suite keeps network integrations disabled. The local-only smoke test
-verifies invocation, grounded output or an explicit validated fallback, and the
-deterministic guarantee path. The combined test below is the strict LLM-success
-gate.
-
-Streamlit uses separate bounded HTTP budgets: the general API timeout covers
-connect/write/pool operations, while `SERVICE_AGENT_UI_API_READ_TIMEOUT_SECONDS`
-defaults to 240 seconds for Snowflake plus a cold local model invocation. A read
-timeout is reported separately from connection failures, HTTP rejections, and
-invalid JSON responses. Successful complex responses expose Snowflake/history,
-retrieval, generation, and total request latency in the debug panel.
-
-To validate the complete live path with Snowflake, hybrid retrieval, and Ollama:
+Terminal 2:
 
 ```powershell
-$env:RUN_SNOWFLAKE_INTEGRATION = "true"
-$env:RUN_OLLAMA_INTEGRATION = "true"
-python -m pytest -s -m "snowflake_integration and ollama_integration" `
-  tests\test_live_snowflake_ollama.py -q
-Remove-Item Env:RUN_SNOWFLAKE_INTEGRATION
-Remove-Item Env:RUN_OLLAMA_INTEGRATION
+.\.venv\Scripts\Activate.ps1
+python -m servicing_agent.run_streamlit
 ```
 
-The combined live test requires both investigation questions to return
-`generation_mode=llm`; a safe deterministic fallback fails the test. It also
-asserts a normal `stop` finish reason, a bounded nonzero output-token count,
-authorized Snowflake history, effective hybrid retrieval, and inline citations.
+Open <http://localhost:8501>. FastAPI health and OpenAPI are available at
+<http://localhost:8000/health> and <http://localhost:8000/docs>.
 
-To run the dashboard's separate **Live Ollama Evaluation**, keep Snowflake,
-hybrid retrieval, and `qwen3:4b-instruct` enabled in `.env`, then run:
+## Demo scenarios
+
+Reset before a repeatable demonstration:
 
 ```powershell
-python -m servicing_agent.benchmark_ollama --runs 5
+python -m servicing_agent.demo_reset
 ```
 
-The command performs one excluded warm-up and then five measured runs for demo
-scenarios 2–6, for 25 recorded responses. It writes both a timestamped artifact
-and `evaluations\live_ollama\latest.json`. The dashboard reads `latest.json`
-dynamically and never starts Snowflake or Ollama itself.
+| Scenario | Prompt or action | Expected behavior |
+|---|---|---|
+| Deterministic status | `What is the status of CASE-4821?` | Authorized SQLite lookup returns `In Progress`, priority, owner, timestamp, and deterministic overdue-SLA state without RAG or LLM generation. |
+| Multi-source investigation | Ask why CASE-4821 was escalated and what delay the customer observed. | Complex workflow retrieves the protected case note and call transcript; the answer reports the three degraded windows and observed 40–60-minute delay with citations. Snowflake history is included only when enabled and authorized. |
+| Premium applicability | `What initial response target applies to CASE-4821?` | Active Premium telemetry entitlement selects approved policy v2.0 and its two-clock-hour target. |
+| Standard applicability | `What initial response target applies to CASE-4824?` | Active Standard telemetry entitlement selects approved policy v1.0 and its eight-business-hour target; one recovered retry does not imply required escalation. |
+| Unknown diagnostics | Ask whether CASE-4821 diagnostic logs were received. | Evidence confirms the request but not receipt; the response does not infer that logs were received, refused, or never sent. |
+| Confirmed resolution | Ask what resolved CASE-4825. | Evidence supports the expired certificate, completed rotation/replay, cleared backlog, and resolved status without transferring those facts to CASE-4821. |
+| Unauthorized access | As Jordan, ask about CASE-4821. | Authorization fails before Snowflake or protected retrieval; no protected rankings, prompt context, snippets, or citations are returned. |
+| Controlled note | Prepare, preview, attest confirmation, and save a CASE-4821 note. | Repeated confirmation returns the same operation/result. A changed ticket version rejects stale confirmation. |
+| Timeout recovery | Confirm with timeout simulation, then reconcile. | State moves `PENDING → UNKNOWN → COMPLETED`; the unique operation ID prevents a second note. |
+| Human handoff | Create, accept, and resolve an authorized CASE-4821 handoff. | Permitted context, troubleshooting history, and source references follow validated lifecycle transitions. |
+| SLA backup routing | Run the sweep twice using the fixed times below. | One SLA handoff is created; the unaccepted handoff moves to the simulated backup queue after 15 minutes. |
 
-Before paying for or waiting on another live run, re-score an existing artifact
-locally after an evaluation-method change:
+```powershell
+python -m servicing_agent.sla_sweep --as-of "2026-11-08T12:00:00Z"
+python -m servicing_agent.sla_sweep --as-of "2026-11-08T12:20:00Z"
+```
+
+Snowflake seed data is maintained by idempotent, stable-ID `MERGE` statements in
+[`snowflake/seed_synthetic_history.sql`](snowflake/seed_synthetic_history.sql).
+Run that script only as the synthetic-data owner; never grant write privileges to
+`SERVICING_HISTORY_READER`.
+
+## Evaluation
+
+### Offline deterministic evaluation
+
+The current report, [`evaluations/latest_results.json`](evaluations/latest_results.json),
+was generated on November 9, 2026 from 24 synthetic contracts, three runs per
+retrieval mode, the deterministic answer generator, mock history, CPU MiniLM, and
+warm caches. Each mode therefore represents 72 scenario runs.
+
+| Mode | Task success | Recall@5 | Precision@3 | Grounded answer | Policy applicability | Failed runs |
+|---|---:|---:|---:|---:|---:|---:|
+| Lexical | 0.9167 | 0.8750 | 0.3056 | 0.8824 | 1.0000 | 6 / 72 |
+| Semantic | 0.8750 | 0.8333 | 0.2778 | 0.8235 | 0.6667 | 9 / 72 |
+| Hybrid | 1.0000 | 1.0000 | 0.3611 | 1.0000 | 1.0000 | 0 / 72 |
+
+| Mode | Retrieval P50 / P95 | Tool P50 / P95 | End-to-end P50 / P95 |
+|---|---:|---:|---:|
+| Lexical | 0.117 / 0.155 ms | 4.591 / 41.148 ms | 8.762 / 107.793 ms |
+| Semantic | 13.452 / 18.142 ms | 16.322 / 49.213 ms | 24.235 / 119.496 ms |
+| Hybrid | 16.039 / 22.528 ms | 22.398 / 49.395 ms | 29.846 / 122.702 ms |
+
+All three modes measured `1.0000` authorization safety, action safety, escalation
+correctness, recovery success, claim/citation relevance, and unsupported-claim
+avoidance in this artifact. Hybrid satisfied all 24 contracts; this is a small
+synthetic regression result, not evidence that hybrid retrieval is universally
+superior.
+
+Run the network-independent evaluation with:
+
+```powershell
+python -m servicing_agent.evaluation
+```
+
+### Live Ollama + Snowflake evaluation
+
+[`evaluations/live_ollama/latest.json`](evaluations/live_ollama/latest.json)
+contains one warm-up plus 25 measured responses: five runs each for scenarios 2–6
+using real Snowflake history, hybrid retrieval, and local
+`qwen3:4b-instruct`. The benchmark was generated on November 10, 2026; revised
+quality dimensions were later calculated from the same saved responses without
+new Ollama or Snowflake calls.
+
+| Automated metric | Measured result |
+|---|---:|
+| LLM generation success / fallback | 100% / 0% |
+| Citation validity / claim-citation relevance | 100% / 100% |
+| Revised semantic correctness | 100% |
+| Revised factual completeness | 100% |
+| Revised claim grounding | 100% |
+| Revised formatting compliance | 100% |
+| Legacy exact contract / legacy grounding contract | 60% / 80% |
+
+The legacy mismatch reflects exact deterministic wording/format requirements; it
+is retained for auditability rather than reclassified as model success. No human
+answer-quality review was performed.
+
+| Warm-request latency | P50 | P95 |
+|---|---:|---:|
+| Model generation | 11.08 s | 13.70 s |
+| End to end | 14.34 s | 18.28 s |
+
+The excluded cold request took `84.18 s`: retrieval/model initialization
+`45.79 s`, Snowflake `7.59 s`, and generation `30.78 s`. These values are
+machine-specific and should not be treated as a production SLO.
+
+Re-score an existing live artifact without calling either integration:
 
 ```powershell
 python -m servicing_agent.benchmark_ollama `
   --reevaluate evaluations\live_ollama\latest.json
 ```
 
-This command makes no Snowflake or Ollama calls. It preserves the original run
-text, evidence IDs, latency, and legacy exact-contract result, writes a new
-timestamped artifact, and updates `latest.json` with the revised scores and an
-auditable before/after analysis.
+Running `python -m servicing_agent.benchmark_ollama --runs 5` performs a new,
+expensive 25-request live benchmark and requires Snowflake, hybrid retrieval, and
+Ollama to be configured.
 
-Artifacts record individual synthetic answers, cited source IDs, selected
-documents, generation/fallback state, finish reason, output tokens, golden-contract
-checks, and stage latency. They never contain Snowflake credentials, private keys,
-or passphrases. Citation validity means the existing application validator
-accepted LLM mode and labels appeared inline; it is not a substitute for factual
-correctness or human review. Human-reviewed answer quality remains **Not
-measured** until a reviewer explicitly adds a separate assessment.
-
-Live answer quality is reported as five distinct deterministic measurements:
-
-- **Semantic answer correctness** checks the requested meaning, polarity,
-  uncertainty/completion state, intent, evidence status, and unsupported
-  certainty.
-- **Factual completeness** checks semantic coverage of every material golden
-  statement and fact, including omissions and negations.
-- **Claim grounding** checks required evidence selection, claim-to-citation
-  relevance, and unsupported-claim avoidance.
-- **Citation validity** records whether the application accepted LLM mode and
-  returned inline source labels. It does not prove factual correctness.
-- **Formatting compliance** rejects planning/reasoning text, unfinished output,
-  and malformed citation brackets. Natural LLM answers do not need the
-  deterministic generator's `**Answer**` heading.
-
-The dashboard retains **Legacy exact contract** as a separate compatibility
-metric. The deterministic 24-scenario evaluator and its exact golden contracts
-are unchanged.
-
-The standard evaluation command always uses the deterministic generator. To run
-a genuine configured-LLM evaluation, explicitly add `--use-configured-llm`. The
-report records requested mode, credential availability, and actual generation
-mode counts. If the key is absent, it labels the run as deterministic fallback;
-it never reports fallback output as LLM output.
-
-## Five-minute technical demonstration
-
-Before the audience joins:
+### Tests
 
 ```powershell
-python -m servicing_agent.demo_reset --database data\service_agent.db
-```
-
-Then use the Streamlit scenario selector and controls:
-
-1. **0:00–0:30 — Frame the architecture.** State that all data and CRM actions are
-   synthetic. Point to FastAPI, LangGraph, SQLite, the authorization boundary, and
-   local hybrid retrieval.
-2. **0:30–1:00 — Deterministic status.** Run **Deterministic ticket status**.
-   Expected: `CASE-4821 is In Progress`, authoritative owner/priority, no RAG or
-   LLM, plus deterministic overdue-SLA status.
-3. **1:00–1:45 — Multi-source investigation.** Run **Multi-source investigation**.
-   Expected in hybrid mode: case-note and call-transcript citations, source
-   snippets, retrieval rankings, and the execution trace. With Snowflake enabled,
-   the answer also shows `SF-*` history citations and history freshness.
-4. **1:45–2:30 — Customer applicability.** Run Premium and Standard policy
-   scenarios. Expected: CASE-4821 uses Premium approved policy v2.0/two clock
-   hours; CASE-4824 uses Standard approved policy v1.0/eight business hours.
-5. **2:30–3:00 — Authorization.** Run **Unauthorized customer access**. Expected:
-   no protected citations, snippets, rankings, or prompt context.
-6. **3:00–4:00 — Controlled write and recovery.** Prepare a CASE-4821 note, attest
-   customer confirmation, and confirm it. A duplicate confirmation returns the
-   same operation/note. Repeat with timeout simulation and reconcile `UNKNOWN →
-   COMPLETED` without another note.
-7. **4:00–4:30 — Mandatory escalation.** Run the SLA check, then show the two-pass
-   CLI sweep below. Expected: one SLA handoff and backup routing after 15 minutes,
-   without LLM reasoning.
-8. **4:30–5:00 — Evaluation dashboard.** Show actual lexical versus semantic versus
-   hybrid results, latency, scenario outcomes, and lexical failure categories.
-   Explicitly note that CSAT, CPRR, ROI, and production impact are not measured.
-
-## Detailed manual scenarios
-
-Use Alex Morgan:
-
-1. `What is the status of CASE-4821?` — unchanged deterministic fast path.
-2. `Why was CASE-4821 escalated?` — exact-match case-note evidence.
-3. `Which events led support to send CASE-4821 to Tier 2?` — paraphrased query.
-4. `What did the client say was wrong during the CASE-4821 phone conversation?`
-   — semantic call-transcript retrieval.
-5. `What initial response target applies to CASE-4821?` — Premium policy v2.0.
-6. `What initial response target applies to CASE-4824?` — Standard policy v1.0.
-7. `Is on-site hardware replacement included for CASE-4821?` — insufficient
-   evidence, not a fabricated answer.
-
-Switch to Jordan Lee and repeat a `CASE-4821` question. The trace contains no
-retrieval rankings and the response contains no protected snippets or citations.
-The authorization denial occurs before any Snowflake connection is opened.
-
-### Snowflake history demonstration
-
-After setting the secure Snowflake variables and starting the API, submit:
-
-```text
-Using customer activity, case changes, and support interactions, summarize the history of CASE-4821.
-```
-
-Expected: the response remains a LangGraph `complex_request`; current status is
-still sourced from SQLite CRM; authorized history appears as `SF-*` citations;
-and the debug panel reports `backend=snowflake`, per-table counts, retrieval time,
-and the newest source timestamp. Switch to `demo-agent-jordan` and repeat the
-request: no Snowflake query or history citation is allowed.
-
-The local CRM authoritatively links `CASE-4821` to `CUST-1001`. If an older
-synthetic Snowflake seed links `HIST-001` to legacy customer `CUST-42`, an
-authorized `CASE-4821` lookup correctly returns no history because both the
-customer and case predicates are enforced in Snowflake. Run
-`snowflake\seed_correct_case_4821_customer.sql` once with the synthetic-data
-owner role to correct that seed. The script is idempotent and narrowly scoped;
-do not run it as, or grant writes to, `SERVICING_HISTORY_READER`.
-
-### Controlled ticket note
-
-1. Open **Controlled actions (simulated)** in Streamlit.
-2. Enter `CASE-4821` and a note, then select **Prepare note preview**.
-3. Verify the case snapshot and note text. SQLite still contains no note at this
-   point.
-4. Check the explicit customer-confirmation attestation, then select **Confirm
-   simulated save**. Repeating Confirm or retrying with the same operation ID does
-   not create another note.
-5. Prepare another note and select **Cancel pending note** to produce a terminal
-   `FAILED / CANCELLED` operation.
-6. Select **Simulate timeout after a successful save**, confirm, then use
-   **Reconcile unknown outcome**. The note is found by operation ID and the state
-   changes from `UNKNOWN` to `COMPLETED` without a second write.
-
-API clients that need retry idempotency should generate a stable operation ID and
-send it in `operation_id` when preparing the note. Reusing it with different
-content returns a conflict.
-
-Equivalent PowerShell API flow:
-
-```powershell
-$headers = @{ "X-Demo-User" = "demo-agent-alex" }
-$prepare = @{
-    ticket_id = "CASE-4821"
-    note = "Customer confirmed telemetry is current."
-    operation_id = "op-demo-note-0001"
-} | ConvertTo-Json
-$preview = Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/actions/notes/prepare" -Headers $headers -ContentType "application/json" -Body $prepare
-$confirm = @{
-    customer_confirmed = $true
-    simulate_timeout_after_success = $false
-} | ConvertTo-Json
-Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:8000/actions/notes/$($preview.operation_id)/confirm" -Headers $headers -ContentType "application/json" -Body $confirm
-```
-
-### Human handoff
-
-1. Create a handoff for `CASE-4821` with troubleshooting steps.
-2. Inspect the permitted case context and retrieval-derived source references.
-3. Select **Accept simulated handoff**, then **Resolve simulated handoff**.
-4. Switch to Jordan and verify that the same case/handoff cannot be accessed.
-
-### Deterministic SLA and backup queue
-
-The synthetic deadline for high-priority `CASE-4821` is overdue. Use the
-Streamlit SLA button or ask `What is the status of CASE-4821?`; either request-time
-path creates at most one SLA handoff without LLM reasoning.
-
-Run a background-independent sweep from PowerShell:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m servicing_agent.sla_sweep --as-of "2026-11-08T12:00:00Z"
-python -m servicing_agent.sla_sweep --as-of "2026-11-08T12:20:00Z"
-```
-
-The database path and backup delay come from `SERVICE_AGENT_DB_PATH` and
-`SLA_BACKUP_AFTER_MINUTES` in `.env`.
-
-The second command reconciles with the existing SLA handoff instead of creating a
-duplicate and routes the still-`CREATED`, twenty-minute-old handoff to **Backup
-Escalation Queue (simulated)**. Accepted/resolved handoffs are not rerouted.
-
-## Tests
-
-Tests use mocked embeddings and do not download a model:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
 python -m pytest
 ```
 
-The test suite preserves every Milestone 1–4 regression and adds demo-reset,
-end-to-end evaluator, deterministic-versus-LLM labeling, dashboard parsing,
-scenario-catalog, major Streamlit-path coverage, mocked Snowflake connector
-queries, authorization boundaries, cleanup, and no-fallback handling. Semantic
-unit tests use mocked embeddings and do not download the model. Response-quality
-regressions cover intent-aware answers, reasoning/partial-output rejection,
-unsupported promises and root causes, claim-level citation relevance, evidence
-polarity, planned-versus-completed actions, and historical event-time accuracy.
-The full suite collects 133 tests: 128 pass offline and the five network tests
-are skipped unless explicitly enabled.
+The current suite collects 135 tests: 130 run offline and five live integration
+tests are opt-in. Unit tests mock embeddings and connectors, so normal test runs do
+not download models or contact Snowflake/Ollama. To opt into live integrations,
+configure `.env` and set `RUN_SNOWFLAKE_INTEGRATION=1` and/or
+`RUN_OLLAMA_INTEGRATION=1` for that process.
 
-The real Snowflake test is opt-in and runs the query through FastAPI and the
-LangGraph workflow. It never prompts interactively:
+### Evaluation limitations
 
-```powershell
-# Configure Snowflake in .env first; this process override opts into the live test.
-$env:RUN_SNOWFLAKE_INTEGRATION = "1"
-python -m pytest -m snowflake_integration tests\test_snowflake_connection.py -q
-Remove-Item Env:RUN_SNOWFLAKE_INTEGRATION
-```
+- The corpus contains 16 synthetic documents and the offline dataset contains 24
+  contracts; neither represents production distribution or long-tail behavior.
+- Automated citation validity confirms accepted labels and deterministic relevance
+  checks, not independent factual truth.
+- Live results cover one local model, one machine, five scenario types, and five
+  measured repetitions each; no confidence intervals or comparative human study
+  were performed.
+- Latency excludes model download and uses warm caches except for the separately
+  reported cold request.
+- CSAT, CPRR, TTR, SLA improvement, repeat-contact reduction, ROI, and production
+  case deflection were not measured.
 
-Without `RUN_SNOWFLAKE_INTEGRATION=1`, this one network test is reported as
-skipped while all mocked tests still run.
+## Known limitations
 
-## Run the end-to-end evaluation
+- **Cold-start latency:** CPU model/index initialization dominated the measured
+  cold request. A long-lived process, pre-warming, or managed inference would be
+  needed for production latency targets.
+- **Retrieval precision:** the small corpus and top-three measurement produce low
+  precision even when required evidence is found. There is no reranker, vector
+  database, learned relevance model, or production threshold calibration.
+- **Synthetic CRM:** current state, actions, confirmation, and queues are SQLite
+  simulations. `X-Demo-User` is not an identity provider, and local files are not
+  encrypted.
+- **Limited operational resilience:** there is no continuously running SLA
+  scheduler, distributed lock, message queue, automatic retry policy, circuit
+  breaker, or multi-instance coordination.
+- **Local generation:** Ollama is optional and safely falls back, but model safety,
+  cost, throughput, and quality have not been validated at production scale.
+- **Snowflake scope:** the adapter has been tested against synthetic history only;
+  it is not a production security certification or data-governance review.
+- **Evaluation coverage:** golden contracts are useful regressions but can share
+  assumptions with the implementation. Human review and adversarial evaluation are
+  still required.
 
-Initialize the model/index first, then run each mode three times:
+## Production roadmap
 
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m servicing_agent.index_embeddings
-python -m servicing_agent.evaluation
-```
+1. **Integrate Salesforce as the system of record.** Replace demo headers and
+   SQLite CRM services with production identity, least-privilege Salesforce APIs,
+   field-level security, record sharing, mutation preconditions, and platform audit
+   events. Keep Snowflake historical context read-only unless a separately governed
+   write use case is approved.
+2. **Evaluate Agentforce versus LangGraph.** Implement the same golden tasks and
+   safety contracts in Agentforce and compare CRM-native actions, authorization,
+   grounding, observability, latency, customization, operational ownership, and
+   total cost. Select per workflow rather than assuming one orchestrator for every
+   request.
+3. **Production hardening.** Add enterprise SSO/OAuth, secret management, encryption,
+   PII controls, prompt/version governance, durable distributed state, bounded
+   retries and circuit breakers, rate limits, asynchronous work queues, monitoring,
+   alerting, red-team tests, and runbooks.
+4. **KPI-driven pilot.** Establish baselines for CPRR, CSAT, TTR, SLA compliance,
+   and repeat contacts; begin with read-only shadowing, then a small agent cohort and
+   confirmation-gated actions. Measure quality and safety alongside business KPIs,
+   review failures with service leaders, and define rollback criteria before wider
+   rollout.
 
-The default dataset, output, modes, run count, fixed clock, and generation mode
-come from the `EVALUATION_*` block in `.env`. Command-line flags remain available
-as explicit one-off overrides.
+## License and data
 
-For a fully cached/offline run:
-
-```dotenv
-HF_HUB_OFFLINE=1
-TRANSFORMERS_OFFLINE=1
-```
-
-Then run `python -m servicing_agent.evaluation`.
-
-Optional genuine configured-LLM run:
-
-```dotenv
-EVALUATION_MODES=hybrid
-EVALUATION_RUNS=1
-EVALUATION_USE_CONFIGURED_LLM=true
-EVALUATION_RESULTS_PATH=evaluations/results/llm-latest.json
-```
-
-Configure the LLM block, then run `python -m servicing_agent.evaluation`.
-
-The default evaluator uses the deterministic answer generator so LLM variability
-and API cost do not affect regression metrics. Every scenario starts from reset
-synthetic data in an isolated temporary database. Model download and embedding
-index initialization are excluded from warm query latency.
-
-### Current synthetic evaluation results
-
-Measured on November 9, 2026 using 24 synthetic scenarios, three runs per
-scenario, the deterministic generator, CPU MiniLM, and warm model/document
-caches. The evaluator forces network-free mock history even when the application
-`.env` enables Snowflake; live history has separate opt-in integration tests.
-
-| Mode | Task success | Recall@5 | Precision@3 | Grounded | Answer quality | Claim/citation relevance | Unsupported claims avoided | Required evidence | Failed runs |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Lexical | 0.9167 | 0.8750 | 0.3056 | 0.8824 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 6/72 |
-| Semantic | 0.8750 | 0.8333 | 0.2778 | 0.8235 | 0.9412 | 1.0000 | 1.0000 | 0.9412 | 9/72 |
-| Hybrid | 1.0000 | 1.0000 | 0.3611 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0/72 |
-
-| Mode | Policy | Authorization | Action safety | Escalation | Recovery |
-|---|---:|---:|---:|---:|---:|
-| Lexical | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| Semantic | 0.6667 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-| Hybrid | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
-
-| Mode | Retrieval P50/P95 | Tool P50/P95 | End-to-end P50/P95 |
-|---|---:|---:|---:|
-| Lexical | 0.117 / 0.155 ms | 4.591 / 41.148 ms | 8.762 / 107.793 ms |
-| Semantic | 13.452 / 18.142 ms | 16.322 / 49.213 ms | 24.235 / 119.496 ms |
-| Hybrid | 16.039 / 22.528 ms | 22.398 / 49.395 ms | 29.846 / 122.702 ms |
-
-Lexical still misses the paraphrased call transcript and therefore cannot satisfy
-the two-document investigation contract. Semantic-only misses the exact
-escalation record, the two-document investigation contract, and one dashboard
-policy contract. Hybrid retrieved the required evidence and satisfied all 24
-synthetic scenario contracts in this run. No evaluation assertion or seed fact
-was weakened. Precision@3 can exceed `0.3333` because the multi-source scenario
-declares two relevant documents. The complete measured report, including
-per-scenario outcomes, claim/citation relevance, claim-safety fields, and
-generation-mode counts, is in `evaluations\latest_results.json`.
-
-These results are regression measurements over synthetic data, not evidence of
-production superiority or statistical significance. No CSAT, CPRR, case
-deflection, ROI, or other business outcome was measured or inferred.
-
-## Troubleshooting
-
-- **Dashboard says no report:** run the end-to-end evaluation command above or set
-  `EVALUATION_RESULTS_PATH` in `.env` to a schema-v2 report.
-- **Semantic mode falls back to lexical:** install `.[semantic]`, initialize the
-  embedding index, remove offline variables for the first model download, then
-  restart FastAPI so the long-lived process imports the semantic dependency.
-- **Offline model load fails:** confirm `RETRIEVAL_CACHE_DIR` points to the cache
-  populated by `python -m servicing_agent.index_embeddings`.
-- **Missing LLM key:** expected behavior is the explicitly labeled deterministic
-  fallback. Retrieval, actions, and SLA rules continue to work.
-- **Snowflake configuration error at startup:** confirm all eight required
-  `SNOWFLAKE_*` identity/key entries are set in root `.env` and that the key path
-  is readable.
-- **Snowflake history is unavailable:** inspect `history_debug.failure_category`
-  (`authentication`, `authorization`, or `query`) and Snowflake query history for
-  the fixed query tag `fde_servicing_agent_history_read`. The application does
-  not log connector details, passphrases, private-key contents, or returned rows.
-- **Snowflake returns no history:** confirm the synthetic Snowflake customer and
-  case identifiers match the CRM `customer_id`/`ticket_id`. The adapter will not
-  weaken the filter or substitute another customer's history.
-- **A demo starts in an unexpected state:** stop the API, run `demo_reset`, then
-  restart Uvicorn so long-lived service objects reopen canonical data.
-- **Port already in use:** change `SERVICE_AGENT_API_PORT`,
-  `SERVICE_AGENT_API_URL`, and/or `SERVICE_AGENT_UI_PORT` in `.env`, then restart
-  both launchers.
-
-## Milestone 4 boundaries
-
-This remains a local demonstration: there is no real Salesforce integration,
-Snowflake write access, production authentication, financial transaction,
-refund, cloud deployment, vector database, or reranker. The Snowflake adapter is
-limited by application code and the `SERVICING_HISTORY_READER` role to synthetic
-read-only history; this is not a production security certification. CRM mutations
-and queue routing are SQLite-only simulations. Customer confirmation is a
-demo-user attestation, not a customer signature or production consent record.
-There is no continuously running scheduler; SLA sweeps must be invoked by a
-request or CLI. The corpus and evaluation set are small and synthetic, local
-database/embedding files are unencrypted, and optional LLM
-generation has not been production-evaluated for safety, latency, or cost.
-The dashboard reads a generated local JSON snapshot rather than a live production
-telemetry system. Timing is machine-specific and excludes cold model download.
-This is demo-ready for a technical walkthrough, not production-ready software.
+No license file is currently included. All repository data is synthetic and for
+local demonstration only.
